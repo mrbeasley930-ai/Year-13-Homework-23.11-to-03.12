@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+/* FIRSTNAME-ONLY v1 (16 Oct 2026): the sign-in keeps the pupil's first name only.
+   A one-letter initial typed after it is kept ("Ahmed A"), so two pupils with the same first name stay apart.
+   Also rewrites saves/loads to the class store, so a remembered full name cannot recreate a surname record.
+   Beyond the Classroom (sc-*) books are left alone. */
+(function(){
+  function fn(s){
+    s=String(s==null?'':s).replace(/\s+/g,' ').trim(); if(!s) return s;
+    if(/^yu luo(\s|$)/i.test(s)) return s.slice(0,6);
+    var w=s.split(' '); if(w.length<2) return s;
+    if(w.length===2 && w[1].replace(/[^A-Za-z]/g,'').length===1) return w[0]+' '+w[1].replace(/[^A-Za-z]/g,'');
+    return w[0];
+  }
+  window.__firstNameOnly=fn;
+  var ST='vestigia-store.mrbeasley930.workers.dev';
+  function skip(b){ return /^sc-/.test(String(b||'')); }
+  function fixKey(k){ k=String(k); var p=k.split('::'); if(p.length<3||skip(p[0])) return k; return p[0]+'::'+p[1]+'::'+fn(p.slice(2).join('::')); }
+  var of=window.fetch;
+  if(of) window.fetch=function(input,init){
+    try{
+      var url=typeof input==='string'?input:(input&&input.url)||'';
+      if(url.indexOf(ST)>=0 && !/[?&]all=1/.test(url)){
+        var u=new URL(url,location.href), k=u.searchParams.get('key');
+        if(k){ var nk=fixKey(k); if(nk!==k){ u.searchParams.set('key',nk); input=(typeof input==='string')?u.toString():new Request(u.toString(),input); } }
+        if(init && typeof init.body==='string' && /post|put/i.test(init.method||'')){
+          var b=JSON.parse(init.body);
+          if(b && b.key && !skip(b.book||String(b.key).split('::')[0])){
+            b.key=fixKey(b.key);
+            if(typeof b.cand==='string') b.cand=fn(b.cand);
+            if(b.data && typeof b.data==='object' && typeof b.data.name==='string') b.data.name=fn(b.data.name);
+            init=Object.assign({},init,{body:JSON.stringify(b)});
+          }
+        }
+      }
+    }catch(e){}
+    return of.call(this,input,init);
+  };
+  var IDS=['g-cand','sg-cand','cand','gName'];
+  function tidy(t){ IDS.forEach(function(id){ var el=document.getElementById(id); if(el && el!==t && el.value && /\S\s+\S/.test(el.value)) el.value=fn(el.value); }); }
+  document.addEventListener('click',function(e){ tidy(e.target); },true);
+  document.addEventListener('keydown',function(e){ if(e.key==='Enter') tidy(null); },true);
+  document.addEventListener('submit',function(){ tidy(null); },true);
+  document.addEventListener('change',function(){ tidy(null); },true);
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Year 13 Revision Workbook &mdash; 23 November to 4 December (U6 Classical Civilisation)</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family: Georgia,'Palatino Linotype',serif;
+    background: linear-gradient(135deg,#1a3a52 0%,#0f1419 55%,#2d1b4e 100%);
+    background-attachment: fixed; color:#e9e4d4; min-height:100vh; padding:20px; line-height:1.55;
+  }
+  .wrap { max-width:920px; margin:0 auto; }
+  header { text-align:center; margin-bottom:18px; }
+  .logo { font-size:38px; color:#d4af37; letter-spacing:5px; text-shadow:2px 2px 5px rgba(0,0,0,.6); }
+  .lat { font-size:14px; color:#8fb3c9; letter-spacing:2px; margin-top:2px; font-style:italic; }
+  .sub { color:#c9b97a; font-style:italic; margin-top:8px; font-size:15px; }
+  .spec { color:#7e93a3; font-size:12.5px; margin-top:4px; letter-spacing:1px; }
+
+  /* table bar */
+  .tablebar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center;
+    background:rgba(20,34,46,.85); border:1px solid #36617f; border-radius:8px; padding:10px 14px; margin-bottom:16px; }
+  .tablebar label { font-size:13px; color:#8fb3c9; }
+  .tablebar input { font-family:Georgia,serif; font-size:14px; padding:6px 10px; width:150px;
+    background:rgba(15,26,36,.7); color:#f0e7c8; border:2px solid #36617f; border-radius:6px; }
+  .tablebar input:focus { outline:none; border-color:#d4af37; }
+  .scorepill { background:linear-gradient(135deg,#d4af37,#b8860b); color:#15222e; font-weight:bold;
+    border-radius:20px; padding:6px 16px; font-size:14px; }
+
+  .tabs { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:20px; }
+  .tab { padding:9px 13px; font-family:Georgia,serif; font-size:13px; font-weight:bold;
+    background:linear-gradient(135deg,#244b66 0%,#15304a 100%); color:#e9e4d4;
+    border:2px solid #d4af37; border-radius:6px; cursor:pointer; transition:all .2s; }
+  .tab:hover { box-shadow:0 0 12px rgba(212,175,55,.5); transform:translateY(-2px); }
+  .tab.active { background:linear-gradient(135deg,#d4af37 0%,#b8860b 100%); color:#15222e; }
+  .tab .done { font-size:11px; color:#5cc98a; }
+  .tab.active .done { color:#15304a; }
+
+  .panel { display:none; }
+  .panel.active { display:block; animation:fade .3s ease; }
+  @keyframes fade { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+
+  .card { background:rgba(20,34,46,.92); border:2px solid #36617f; border-radius:10px;
+    padding:22px 24px; margin-bottom:18px; box-shadow:0 0 22px rgba(0,0,0,.4); }
+  .card h2 { color:#d4af37; font-size:22px; margin-bottom:6px; }
+  .card h3 { color:#f0e7c8; font-size:16px; margin:16px 0 8px; }
+  .card p { margin-bottom:11px; color:#d7d2c2; }
+  .lead { color:#d4af37; font-weight:bold; }
+  .pill { display:inline-block; background:rgba(212,175,55,.12); border:1px solid #d4af37; border-radius:18px;
+    padding:3px 13px; color:#d4af37; font-size:12.5px; margin:3px; }
+  .note { color:#8fb3c9; font-size:13px; font-style:italic; }
+  table.gram { width:100%; border-collapse:collapse; margin:10px 0 4px; font-size:13.5px; }
+  table.gram th, table.gram td { border:1px solid #36617f; padding:6px 9px; text-align:left; }
+  table.gram th { background:rgba(212,175,55,.15); color:#d4af37; }
+  table.gram td.rl { background:rgba(36,75,102,.4); color:#f0e7c8; font-weight:bold; white-space:nowrap; }
+  .lat-word { color:#f0e7c8; font-style:italic; }
+
+  /* ---- the exercise-book "page" pupils copy ---- */
+  .bookpage { background:#fbf7ea; color:#22303c; border-radius:8px; border:1px solid #d8cfae;
+    padding:18px 22px 16px; margin:12px 0 6px; box-shadow:0 4px 14px rgba(0,0,0,.35);
+    background-image:repeating-linear-gradient(transparent, transparent 27px, #e3dcc2 27px, #e3dcc2 28px);
+    line-height:28px; font-size:15px; }
+  .bookpage .bp-date { float:right; color:#5a6b7c; font-size:13.5px; }
+  .bookpage .bp-title { font-weight:bold; text-decoration:underline; color:#1F3864; }
+  .bookpage .bp-rule { border:2px solid #1F3864; border-radius:4px; padding:2px 10px; display:inline-block;
+    margin:4px 0; background:rgba(46,117,182,.07); font-weight:bold; }
+  .bookpage table { border-collapse:collapse; margin:4px 0; background:#fffdf6; line-height:1.4; }
+  .bookpage table th, .bookpage table td { border:1px solid #8fa3b8; padding:3px 10px; font-size:13.5px; color:#22303c; }
+  .bookpage table th { background:#e8eef7; color:#1F3864; }
+  .bookpage i { color:#1F3864; }
+  .copybar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:10px 0 4px;
+    background:rgba(212,175,55,.1); border:1px dashed #d4af37; border-radius:8px; padding:10px 14px; }
+  .copybar .cb-txt { font-size:13.5px; color:#e9e4d4; }
+  .btn-unlock { padding:9px 16px; font-family:Georgia,serif; font-size:13.5px; font-weight:bold; cursor:pointer;
+    border-radius:6px; border:2px solid #5cc98a; background:transparent; color:#5cc98a; transition:all .2s; }
+  .btn-unlock:hover { background:rgba(92,201,138,.15); }
+  .btn-unlock.doneit { background:#5cc98a; color:#15222e; cursor:default; }
+  .qs-locked { display:none; }
+  .lockmsg { text-align:center; color:#8fb3c9; font-size:13.5px; font-style:italic; padding:14px;
+    border:1px dashed #36617f; border-radius:8px; margin-top:12px; }
+
+  .qcount { color:#8fb3c9; font-size:12.5px; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .qtext { font-size:16.5px; color:#f0e7c8; margin-bottom:12px; }
+  .qtext .lat { color:#d4af37; font-style:italic; font-weight:bold; }
+  .opts { display:flex; flex-direction:column; gap:9px; }
+  .opt { text-align:left; padding:11px 15px; font-family:Georgia,serif; font-size:15px;
+    background:rgba(36,75,102,.45); color:#e9e4d4; border:2px solid #36617f; border-radius:7px; cursor:pointer; transition:all .15s; }
+  .opt:hover:not(.locked) { border-color:#d4af37; background:rgba(36,75,102,.85); }
+  .opt.correct { border-color:#5cc98a; background:rgba(92,201,138,.22); }
+  .opt.wrong { border-color:#e07a6b; background:rgba(224,122,107,.2); }
+  .opt.locked { cursor:default; }
+  .fb { margin-top:11px; padding:11px 14px; border-radius:7px; font-size:14px; display:none; }
+  .fb.show { display:block; }
+  .fb.good { background:rgba(92,201,138,.14); border-left:4px solid #5cc98a; }
+  .fb.bad { background:rgba(224,122,107,.13); border-left:4px solid #e07a6b; }
+  .fb b { color:#d4af37; }
+
+  .wtext { width:100%; min-height:44px; margin:4px 0; padding:9px 11px; font-family:Georgia,serif;
+    font-size:15px; background:rgba(15,26,36,.7); color:#f0e7c8; border:2px solid #36617f; border-radius:7px; resize:vertical; }
+  .wtext:focus { outline:none; border-color:#d4af37; box-shadow:0 0 8px rgba(212,175,55,.3); }
+  .btnrow { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; align-items:center; }
+  .btn { padding:8px 16px; font-family:Georgia,serif; font-size:13.5px; font-weight:bold; cursor:pointer; border-radius:6px; transition:all .2s; }
+  .btn-gold { background:linear-gradient(135deg,#d4af37,#b8860b); color:#15222e; border:none; }
+  .btn-gold:hover { box-shadow:0 0 14px rgba(212,175,55,.6); }
+  .btn-ghost { background:#244b66; color:#e9e4d4; border:2px solid #d4af37; }
+  .btn-ghost:hover { background:#2d5a7a; }
+  .model-box { margin-top:12px; padding:12px 15px; border-radius:7px; background:rgba(45,27,78,.45);
+    border-left:4px solid #d4af37; font-size:15px; display:none; }
+  .model-box.show { display:block; }
+  .model-box b { color:#d4af37; }
+  .selfmark { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .sm { padding:7px 13px; font-family:Georgia,serif; font-size:13.5px; font-weight:bold; cursor:pointer;
+    border-radius:6px; border:2px solid; background:transparent; }
+  .sm.nailed { border-color:#5cc98a; color:#5cc98a; }
+  .sm.close { border-color:#d4af37; color:#d4af37; }
+  .sm.notyet { border-color:#e07a6b; color:#e07a6b; }
+  .sm.chosen { background:rgba(255,255,255,.1); }
+
+  .instance { border-top:1px solid rgba(54,97,127,.5); padding-top:16px; margin-top:16px; }
+  .instance:first-child { border-top:none; padding-top:0; margin-top:0; }
+
+  .board { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
+  .board th, .board td { border:1px solid #36617f; padding:8px 10px; text-align:left; }
+  .board th { background:rgba(212,175,55,.15); color:#d4af37; }
+  .board td.n { color:#f0e7c8; font-weight:bold; }
+  .big-score { font-size:40px; color:#d4af37; text-align:center; margin:6px 0; }
+  .cta { text-align:center; color:#8fb3c9; font-size:13.5px; }
+
+  footer { text-align:center; color:#5f7282; font-size:12px; margin:26px 0 8px; }
+  @media print { body{background:#fff;color:#000;} .tabs,.btnrow,.tablebar,.copybar,footer{display:none!important;} .panel{display:block!important;} .qs-locked{display:block!important;} .bookpage{box-shadow:none;} }
+@media(max-width:700px){ table.gram, .bookpage table{display:block;overflow-x:auto;max-width:100%} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">ANAMNESIS</div>
+    <div class="lat">recollection</div>
+    <div class="sub">Year 13 Revision Workbook &middot; Monday 23 November to Friday 4 December</div>
+    <div class="spec">OCR A Level Classical Civilisation H408 &middot; The World of the Hero (H408/11) &middot; Greek Art (H408/24) &middot; Love and Relationships (H408/32)</div>
+  </header>
+
+  <div class="tablebar">
+    <span id="whoami" class="note">Not signed in yet</span>
+    <span class="scorepill">Score: <span id="scoreNow">0</span> / <span id="scoreMax">0</span></span>
+    <span id="savestatus" class="note"></span>
+    <button class="btn btn-ghost" onclick="signOut()">Switch user</button>
+    <button class="btn btn-ghost" onclick="resetAll()">Start again</button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <!-- START -->
+  <div class="panel active" id="p-start">
+    <div class="card">
+      <h2>How this workbook works</h2>
+      <p>This is your homework for the two weeks from <b>Monday 23 November</b> to <b>Friday 4 December</b>. It runs alongside your Thursday essays. It revises five topics: the <b>Odyssey</b>, <b>Sappho</b>, <b>Plato&rsquo;s Symposium</b>, <b>Ovid, Ars Amatoria 3</b> (as far as we have read, to 3.644) and <b>Greek sculpture</b> (free-standing and architectural; no vases).</p>
+      <p>Each topic tab has revision notes, a page to copy into your folder, and questions that unlock when you have copied it. <b>Tab 6</b> is about the scholars: what they argue and how to answer them. <b>Tab 7</b> is the written work. You already write a 30-mark essay each week, so the writing here is short: five ten-mark answers and five responses to a scholar.</p>
+      <p>Have your texts with you: the Odyssey, the OCR Sappho booklet, the Symposium, Kline&rsquo;s Ars Amatoria 3 and your sculpture booklet.</p>
+      <h3>Time plan (about three and a half hours over the two weeks)</h3>
+      <table class="gram">
+        <tr><th>Tab</th><th>When</th><th>What you do</th><th>Time</th></tr>
+        <tr><td class="rl">1 &middot; Odyssey</td><td>Week 1</td><td>The second half book by book; the arguments; notes; 10 questions</td><td>25 min</td></tr><tr><td class="rl">2 &middot; Sappho</td><td>Week 1</td><td>Context, fragments, six poems, the arguments; notes; 8 questions</td><td>20 min</td></tr><tr><td class="rl">3 &middot; Plato</td><td>Week 1</td><td>The speeches in order, Diotima&rsquo;s ladder, the arguments; notes; 10 questions</td><td>25 min</td></tr><tr><td class="rl">4 &middot; Ovid</td><td>Week 2</td><td>Context; Book 3 in order to 3.644; the arguments; notes; 10 questions</td><td>25 min</td></tr><tr><td class="rl">5 &middot; Greek sculpture</td><td>Week 2</td><td>Every prescribed free-standing and architectural piece; the arguments; notes; 12 questions</td><td>30 min</td></tr><tr><td class="rl">6 &middot; Scholars</td><td>Both weeks</td><td>One or two scholars per topic; 10 questions; five short written responses (claim, for, against, judgement)</td><td>40 min</td></tr><tr><td class="rl">7 &middot; Written answers</td><td>Both weeks</td><td>Five ten-mark answers (one per topic) and five responses to a scholar; each planned, written and self-marked against a model</td><td>75 min</td></tr><tr><td class="rl">8 &middot; Spot the Error</td><td>Week 2</td><td>Ten summaries, one wrong detail in each</td><td>10 min</td></tr>
+      </table>
+      <p><b>Week 1 (by Friday 27 November):</b> tabs 1, 2 and 3; the first half of tab 6; the Odyssey, Sappho and Plato written answers. <b>Week 2 (by Friday 4 December):</b> tabs 4 and 5; the rest of tab 6; the Ovid and sculpture written answers; Spot the Error.</p>
+      <p class="note">You get one attempt at each multiple-choice question. Read the feedback whether you are right or wrong: it carries detail you can use in an essay. Your work saves to the class store under your name, so you can stop and come back on any computer.</p>
+    </div>
+  </div>
+
+  <div class="panel" id="p-yod"><div class="card">
+    <h2>1 &middot; The Odyssey (Week 1)</h2>
+    <p><span class="lead">Revision notes.</span> The whole poem, by the arguments examiners set. For each one, learn two scenes from the first half and two from the second, with the book number.</p>
+    <h3>The shape</h3>
+    <p><b>Books 1&ndash;4, the Telemachy</b> (Book 1 is prescribed): Ithaca without its king. <b>Books 5&ndash;8</b>: Calypso, the raft, Nausicaa, the Phaeacians. <b>Books 9&ndash;12, the apologoi</b>: Odysseus tells his own wanderings. <b>Book 13</b>: home, and Athena. <b>Books 16&ndash;23</b>: disguise, testing, recognition, revenge, reunion. Prescribed: 1, 5&ndash;13, 16&ndash;19, 21&ndash;23.</p>
+    <h3>The second half, book by book</h3>
+    <p><b>16.</b> In Eumaeus&rsquo; hut Athena restores Odysseus&rsquo; looks and he reveals himself to <b>Telemachus</b>, who at first thinks he is a god. They weep like birds robbed of their young. The suitors&rsquo; ambush has failed; Penelope rebukes Antinous.</p>
+    <p><b>17.</b> The beggar walks to town. The goatherd <b>Melanthius</b> kicks him. The old dog <b>Argos</b>, lying on a dung-heap, knows him, wags his tail and dies. In the hall <b>Antinous</b> throws a <b>footstool</b>.</p>
+    <p><b>18.</b> The beggar boxes <b>Irus</b>. Penelope, made beautiful by Athena, shows herself to the suitors and draws <b>gifts</b> from them; Odysseus is pleased. The maid <b>Melantho</b> insults him. Eurymachus throws a stool.</p>
+    <p><b>19.</b> The interview by the fire. Odysseus tells Penelope a Cretan tale; she weeps like melting snow. <b>Eurycleia</b> washes his feet and knows the <b>scar</b> (the boar on Parnassus, his grandfather Autolycus); he takes her by the throat. Penelope&rsquo;s dream of the eagle and the geese; the gates of horn and ivory; she announces the <b>contest of the bow</b>.</p>
+    <p><b>21.</b> The bow and the twelve axes. Telemachus nearly strings it. Odysseus reveals himself to <b>Eumaeus and Philoetius</b> by the scar. He strings the bow as a bard strings a <b>lyre</b>, and shoots through the axes.</p>
+    <p><b>22.</b> Antinous is shot through the throat as he lifts his cup. <b>Eurymachus</b> offers compensation and is refused. Melanthius arms the suitors; Athena appears as Mentor and then raises the aegis. The priest Leodes is killed; the bard <b>Phemius</b> and the herald Medon are spared. Twelve <b>maids</b> are hanged by Telemachus; Melanthius is mutilated. Eurycleia is forbidden to gloat.</p>
+    <p><b>23.</b> Penelope will not believe it. She tests him by telling Eurycleia to move the <b>bed</b>; he is angry, and describes how he built it round a living <b>olive tree</b>. The simile of shipwrecked sailors reaching land is given to her. Athena holds back the dawn.</p>
+    <h3>The arguments</h3>
+    <p><b>Odysseus as hero.</b> M&ecirc;tis (the Cyclops, the Cretan lies, the bow) against bia; endurance; but pride (the boast to Polyphemus), secrecy with his crew (Scylla), and a revenge that includes the maids.</p>
+    <p><b>Xenia.</b> Good hosts: Nestor, Menelaus, the Phaeacians, Eumaeus. Bad hosts: Polyphemus. Bad guests: the suitors. Zeus is the god of guests, which is how the poem justifies the slaughter.</p>
+    <p><b>Women.</b> Penelope matches him in cunning (the web, the gifts, the bed). Athena directs the plot. Calypso and Circe delay and help. Eurycleia and Eumaeus show loyalty in slaves; Melantho and the twelve show what disloyalty costs.</p>
+    <p><b>Recognition.</b> Telemachus (16), Argos (17), Eurycleia (19), the herdsmen (21), the suitors (22), Penelope (23). Each uses a different token: appearance, instinct, the scar, the bow, the bed.</p>
+    <p><b>Justice.</b> Zeus in Book 1: mortals suffer through their own recklessness. The suitors were warned repeatedly (Halitherses, Theoclymenus, the beggar himself). Against that: Amphinomus and Leodes die with the worst, and the maids were slaves.</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">Odyssey &mdash; scenes to quote, by argument</span><br>
+      <table>
+        <tr><th>Argument</th><th>First half</th><th>Second half</th></tr>
+        <tr><td>M&ecirc;tis</td><td>Nobody and the ram (9); the Cretan lie (13)</td><td>the beggar&rsquo;s tales (19); the bow (21)</td></tr>
+        <tr><td>Flaws</td><td>the boast (9); Scylla kept secret (12)</td><td>Eurycleia seized by the throat (19); the maids (22)</td></tr>
+        <tr><td>Xenia</td><td>Phaeacians (7&ndash;8, 13); Polyphemus (9)</td><td>Eumaeus (16); the footstool (17)</td></tr>
+        <tr><td>Women</td><td>Calypso (5); Nausicaa (6); Circe (10, 12)</td><td>Penelope&rsquo;s gifts (18), dream (19), bed (23)</td></tr>
+        <tr><td>Recognition</td><td>Athena (13)</td><td>Telemachus 16, Argos 17, scar 19, bed 23</td></tr>
+        <tr><td>Gods</td><td>Zeus&rsquo; rule (1); Poseidon (5, 13); Helios (12)</td><td>Athena as Mentor and the aegis (22)</td></tr>
+      </table>
+      <span class="bp-rule">Every point needs a book number and a because. Use both halves of the poem.</span>
+    </div>
+    <p class="note">Set it out like this: date in the margin, title underlined, table ruled, the key point boxed.</p>
+    <div class="copybar"><span class="cb-txt">Odyssey table copied?</span>
+      <button class="btn-unlock" id="unlock_yod" onclick="tickNotes('yod',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_yod">The questions unlock when you have copied the notes above into your folder.</div>
+    <div class="qs-locked" id="qs_yod"><div id="yodBody"></div></div>
+  </div></div>
+
+  <div class="panel" id="p-ysa"><div class="card">
+    <h2>2 &middot; Sappho (Week 1)</h2>
+    <p><span class="lead">Revision notes.</span> Use your OCR booklet of the prescribed poems alongside this page. Learn each poem by number, by one image and by what it shows about desire.</p>
+    <h3>Context</h3>
+    <p><b>Who and when.</b> Sappho of <b>Lesbos</b> (Mytilene), around <b>600 BC</b>. <b>Lyric</b> poetry: sung to the lyre, in the Aeolic dialect, some for solo performance and some (the wedding songs) for a chorus. Nine books were collected at Alexandria; almost all is lost.</p>
+    <p><b>Fragments.</b> Only poem <b>1</b> is complete. Poem 31 breaks off; others are a line or two, quoted by later writers or found on papyrus. Every claim about Sappho has to allow for what is missing: we often do not know the speaker, the occasion or the ending.</p>
+    <p><b>Audience.</b> Debated: a circle of young women before marriage, a chorus she trained, or a symposium. The poems speak of women by name (Anactoria, Atthis, Gongyla) and of marriage as loss.</p>
+    <h3>The poems to know</h3>
+    <p><b>1, the hymn to Aphrodite.</b> A prayer in the proper form: the goddess addressed with her titles, reminded of past help, asked for help now. Aphrodite came before in a chariot drawn by <b>sparrows</b>, smiled, and asked <b>who wrongs you, Sappho?</b> She promised that the one who flees will soon pursue. Sappho asks her to be her <b>ally</b> in battle. Humour and self-knowledge: the goddess has heard this before.</p>
+    <p><b>2.</b> An invitation to Aphrodite to come from <b>Crete</b> to a sacred grove: apple trees, altars smoking with incense, cold water, roses, sleep falling from the leaves. Desire as a place and as ritual.</p>
+    <p><b>16.</b> A <b>priamel</b>: some say horsemen, some infantry, some ships are the finest thing on the black earth; <b>I say it is whatever one loves</b>. Proof: <b>Helen</b>, who left the best of husbands. So the speaker thinks of <b>Anactoria</b>, who is absent, and would rather see her walk than the chariots of Lydia. War&rsquo;s values answered with love&rsquo;s.</p>
+    <p><b>31.</b> A man sits opposite a woman and seems equal to the gods. The speaker watches, and her body fails: no voice, <b>tongue broken</b>, <b>fire under the skin</b>, eyes blind, ears humming, sweat, trembling, <b>greener than grass</b>, close to death. Desire as a list of symptoms. The last surviving words turn towards endurance. Imitated by Catullus (51).</p>
+    <p><b>94.</b> A parting. A woman leaves weeping; the speaker tells her to go and remember: garlands of violets and roses, perfume, soft beds. Memory as consolation. The first surviving line, <b>I wish I were dead</b>, may be either woman&rsquo;s.</p>
+    <p><b>130.</b> Eros the <b>limb-loosener</b> shakes me again, a <b>sweet-bitter</b> creature that cannot be fought (<i>glukupikron</i>). Anne Carson built her account of desire as lack on this one word.</p>
+    <p><b>The wedding songs.</b> Praise of bride and groom, jokes at the doorkeeper&rsquo;s expense, the bride compared to an apple out of reach. A public, communal voice beside the private one.</p>
+    <h3>The arguments</h3>
+    <p><b>Desire is physical and involuntary</b> (31, 130) <b>and also chosen and valued</b> (16). <b>Love is between women, and is not presented as shameful.</b> <b>The gods are close</b>: Aphrodite talks to her. <b>Marriage means separation</b> (94). Against Plato: Sappho stays with one beloved body and its loss; Diotima tells the lover to climb away from it. Against Ovid: Sappho speaks from inside desire; Ovid teaches how to manage it.</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">Sappho &mdash; six poems</span><br>
+      Lesbos, c. 600 BC; lyric; fragments (only 1 complete).<br>
+      <table>
+        <tr><th>Poem</th><th>Image</th><th>What it shows</th></tr>
+        <tr><td>1</td><td>sparrows; &lsquo;who wrongs you, Sappho?&rsquo;; ally</td><td>prayer form; desire recurs; humour</td></tr>
+        <tr><td>2</td><td>Crete; apple grove; incense</td><td>desire as a sacred place</td></tr>
+        <tr><td>16</td><td>priamel; Helen; Anactoria</td><td>the finest thing is whatever one loves</td></tr>
+        <tr><td>31</td><td>broken tongue; fire; greener than grass</td><td>desire as symptoms; jealousy?</td></tr>
+        <tr><td>94</td><td>garlands, perfume, soft beds</td><td>parting; memory consoles</td></tr>
+        <tr><td>130</td><td>limb-loosener; sweet-bitter</td><td>Eros cannot be fought (Carson)</td></tr>
+      </table>
+      <span class="bp-rule">Always allow for the fragment: say what we cannot know.</span>
+    </div>
+    <p class="note">Set it out like this: date in the margin, title underlined, table ruled, the key point boxed.</p>
+    <div class="copybar"><span class="cb-txt">Sappho table copied?</span>
+      <button class="btn-unlock" id="unlock_ysa" onclick="tickNotes('ysa',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_ysa">The questions unlock when you have copied the notes above into your folder.</div>
+    <div class="qs-locked" id="qs_ysa"><div id="ysaBody"></div></div>
+  </div></div>
+
+  <div class="panel" id="p-ypl"><div class="card">
+    <h2>3 &middot; Plato, Symposium (Week 1)</h2>
+    <p><span class="lead">Revision notes.</span> Know who says what. Marks are lost by giving Aristophanes&rsquo; myth to Socrates, or Pausanias&rsquo; two Aphrodites to Diotima.</p>
+    <h3>Context</h3>
+    <p><b>Plato</b>, Athenian, pupil of Socrates, writing in the <b>fourth century BC</b>. The <b>Symposium</b> is set at a drinking party at the house of the tragic poet <b>Agathon</b>, who has just won his first victory (<b>416 BC</b>). The guests agree to drink lightly and each give a speech in praise of <b>Eros</b>. The setting is the world of elite Athenian men, and the love mostly in view is <b>pederasty</b>: an older lover (<i>erast&ecirc;s</i>) and a younger beloved (<i>er&ocirc;menos</i>).</p>
+    <h3>The speeches in order</h3>
+    <p><b>Phaedrus.</b> Eros is the oldest of the gods and the cause of the greatest goods: a lover is ashamed to be seen acting badly by his beloved, so an <b>army of lovers</b> would be unbeatable. Examples: <b>Alcestis</b> died for her husband; <b>Achilles</b> died to avenge his lover Patroclus; Orpheus would not die and was shown a phantom.</p>
+    <p><b>Pausanias.</b> There are <b>two Aphrodites</b> and so two loves. <b>Common</b> (Pandemos) love is of the body, of women as much as boys, and does not last. <b>Heavenly</b> (Urania) love is of the mind and character, between males, and aims at virtue. A relationship is honourable if the beloved yields for the sake of becoming better.</p>
+    <p><b>Eryximachus</b>, the doctor. Love is a force in all nature: medicine, music and the seasons depend on the harmony of opposites.</p>
+    <p><b>Aristophanes</b>, the comic poet (after his hiccups). Humans were once <b>round</b>, with four arms and four legs, in three kinds: male, female and <b>androgynous</b>. They attacked the gods; <b>Zeus cut them in half</b>. Each half searches for its other half; love is the name for the <b>desire and pursuit of the whole</b>. Hephaestus might offer to weld two lovers into one. The myth accounts for love between men, between women and between men and women.</p>
+    <p><b>Agathon.</b> Eros is the youngest, most beautiful and most delicate of the gods, and has every virtue. Socrates questions him: if love desires beauty, love <b>lacks</b> it.</p>
+    <p><b>Socrates, reporting Diotima</b>, a wise woman of Mantinea. Eros is neither god nor mortal but a <b>daimon</b>, a spirit between the two. He is the child of <b>Poros</b> (Resource) and <b>Penia</b> (Poverty), conceived at the feast for Aphrodite&rsquo;s birth: always in need, always scheming. Love is desire for the <b>permanent possession of the good</b>, and its work is <b>giving birth in beauty</b>, in body (children) or in soul (virtue, laws, poems). Then the <b>ladder</b>: from one beautiful body, to all beautiful bodies, to beautiful souls, to laws and practices, to knowledge, to the <b>Form of Beauty</b> itself, which does not change.</p>
+    <p><b>Alcibiades</b> bursts in drunk and praises Socrates instead: he is like a statue of <b>Silenus</b> that opens to show gods inside; he resisted Alcibiades&rsquo; attempt to seduce him under one cloak; he was brave at <b>Potidaea</b> and <b>Delium</b>. The ladder in practice, or its human cost.</p>
+    <h3>The arguments</h3>
+    <p><b>Love as lack.</b> Aristophanes: we lack our other half. Diotima: Eros lacks the good and the beautiful. Compare Sappho 130 and 31.</p>
+    <p><b>Body and soul.</b> Pausanias ranks them; Diotima makes the body only the first step. Is the individual beloved left behind? Many readers think so.</p>
+    <p><b>Whose view is it?</b> Plato writes no speech in his own voice. Diotima&rsquo;s teaching comes through Socrates, through a narrator, years later. K. J. Dover set the speeches in the conventions of Athenian homosexual relations, which Pausanias describes most directly.</p>
+    <p><b>Men and women.</b> The speakers are all men; the highest teaching is given to a woman, Diotima; women&rsquo;s desire appears only in Aristophanes&rsquo; myth.</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">Plato, Symposium &mdash; who says what</span><br>
+      Agathon&rsquo;s house, 416 BC; speeches in praise of Eros.<br>
+      <table>
+        <tr><th>Speaker</th><th>Claim</th><th>Detail to quote</th></tr>
+        <tr><td>Phaedrus</td><td>Eros inspires courage</td><td>army of lovers; Alcestis; Achilles</td></tr>
+        <tr><td>Pausanias</td><td>two loves</td><td>Common and Heavenly Aphrodite</td></tr>
+        <tr><td>Eryximachus</td><td>love as harmony in nature</td><td>medicine, music</td></tr>
+        <tr><td>Aristophanes</td><td>love seeks our other half</td><td>round people; Zeus cuts them; three kinds</td></tr>
+        <tr><td>Agathon</td><td>Eros young and beautiful</td><td>refuted: love lacks beauty</td></tr>
+        <tr><td>Diotima (via Socrates)</td><td>love desires the good for ever</td><td>daimon; Poros and Penia; birth in beauty; the ladder</td></tr>
+        <tr><td>Alcibiades</td><td>praise of Socrates</td><td>Silenus statue; the cloak; Potidaea</td></tr>
+      </table>
+      <span class="bp-rule">Ladder: one body &rarr; all bodies &rarr; souls &rarr; laws &rarr; knowledge &rarr; Beauty itself.</span>
+    </div>
+    <p class="note">Set it out like this: date in the margin, title underlined, table ruled, the key point boxed.</p>
+    <div class="copybar"><span class="cb-txt">Symposium table copied?</span>
+      <button class="btn-unlock" id="unlock_ypl" onclick="tickNotes('ypl',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_ypl">The questions unlock when you have copied the notes above into your folder.</div>
+    <div class="qs-locked" id="qs_ypl"><div id="yplBody"></div></div>
+  </div></div>
+
+  <div class="panel" id="p-yov"><div class="card">
+    <h2>4 &middot; Ovid, Ars Amatoria 3 (Week 2)</h2>
+    <p><span class="lead">Revision notes (to 3.644, as far as we have read).</span> Use your Kline text and the Reading Notes alongside this page.</p>
+    <h3>Context</h3>
+    <p><b>Ovid</b> (43 BC&ndash;AD 17), writing in Rome under <b>Augustus</b>. The <i>Ars Amatoria</i> appeared about <b>2 BC&ndash;AD 2</b>: Books 1 and 2 teach men how to find and keep a woman; <b>Book 3</b> teaches women. It is a <b>didactic</b> poem, the form of Hesiod and of Virgil&rsquo;s <i>Georgics</i>, but in <b>elegiac couplets</b> and on a subject that makes the form a joke: Ovid is the <b>teacher of love</b>. Augustus&rsquo; <b>marriage and adultery laws</b> of 18 BC made adultery a crime. In <b>AD 8</b> Ovid was banished to Tomis for <b>a poem and a mistake</b>; the poem was this one.</p>
+    <h3>Book 3 in order</h3>
+    <p><b>Opening.</b> He has armed the Greeks against the Amazons; now he will arm the <b>Amazons</b>. Not all women are bad: Penelope, Laodamia, Alcestis. Men deceive more often than women: Jason, Theseus, <b>Demophoon</b>, and <b>Aeneas</b>, who gave Dido the sword and the reason to die (3.39&ndash;42). Venus told him to teach.</p>
+    <p><b>Carpe diem.</b> Use your youth: the years go like running water, and the day comes when you will lie cold and alone.</p>
+    <p><b>Cultus.</b> Once there was rough simplicity; <b>now Rome is golden</b> (3.113). He welcomes his own age because it has refinement. <b>Hair</b> should suit the shape of the face (3.133&ndash;168). <b>Dress</b>: no need for purple and gold; choose the colour that suits you (3.169&ndash;192).</p>
+    <p><b>The body.</b> No rank armpits or rough legs; clean teeth. <b>Make-up</b> is recommended but the process must be hidden: let him think you are asleep. Much is ugly in the doing and pleasing when done (3.193&ndash;250).</p>
+    <p><b>Hiding faults.</b> The short woman should sit; the thin should wear thick cloth; learn how to <b>laugh</b>, and how to cry, and how to <b>walk</b> (3.251&ndash;310).</p>
+    <p><b>Accomplishments.</b> Sing: the <b>Sirens</b> held ships by their voices (3.311). Play the <b>lyre</b>. Read the poets: Callimachus, Anacreon, <b>Sappho</b> (what is more wanton than she? 3.331), Menander, Propertius, Gallus, Tibullus, Virgil, and Ovid himself. Dance; know the board games.</p>
+    <p><b>Be seen.</b> The porticoes, the theatres, the temples, the Circus: what is hidden is unknown.</p>
+    <p><b>Beware.</b> Avoid the man who is too well groomed, and thieves who are after your clothes (3.433&ndash;466). <b>Letters</b>: send them by a trusted maid, make him wait a little, disguise your hand (3.467&ndash;498).</p>
+    <p><b>Temper.</b> Anger disfigures: <b>Pallas</b> threw away her pipes when she saw her puffed cheeks in the water (3.505). Do not be proud or gloomy.</p>
+    <p><b>Managing lovers.</b> Give each man a role that fits him; value <b>poets</b>, who give fame. Treat the novice and the veteran differently. Let him believe he has a <b>rival</b>; shut the door sometimes. <b>Why are wives not loved?</b> Because their husbands may come whenever they like (3.585&ndash;586). <b>Drop the blunted foils</b> (3.589).</p>
+    <p><b>Deceiving the guard.</b> Letters carried on a maid&rsquo;s body or written in milk; and the <b>city of alibis</b>: theatres, the Circus, the temple of the Good Goddess, the baths (to 3.644).</p>
+    <h3>The arguments</h3>
+    <p><b>Is Book 3 on women&rsquo;s side?</b> He claims to arm them, defends them from the charge of treachery, and assumes they have desires and choices. But every instruction makes a woman more pleasing to men, and the teacher keeps reminding us he has taught the other side too. Roy Gibson, in his commentary, shows how often the advice steers women to a middle way: neither too plain nor too showy.</p>
+    <p><b>Love as art.</b> For Sappho desire strikes; for Diotima it climbs; for Ovid it is a skill with rules, practised in the city. <b>Is it serious?</b> The mock-didactic voice, the myths cut down to jokes (Pallas, the Sirens), and the cheerful advice on deceiving husbands sit badly beside Augustus&rsquo; laws.</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">Ovid, Ars Amatoria 3 &mdash; the advice in order (to 3.644)</span><br>
+      Didactic form, elegiac couplets; c. 2 BC&ndash;AD 2; Augustus&rsquo; laws 18 BC; exile AD 8.<br>
+      <table>
+        <tr><th>Topic</th><th>Line or image</th></tr>
+        <tr><td>Opening</td><td>arming the Amazons; Aeneas and Dido (3.39&ndash;42)</td></tr>
+        <tr><td>Cultus</td><td>&lsquo;now Rome is golden&rsquo; (3.113); hair to suit the face; colours</td></tr>
+        <tr><td>Make-up</td><td>hide the process</td></tr>
+        <tr><td>Accomplishments</td><td>Sirens (3.311); lyre; reading list with Sappho (3.331)</td></tr>
+        <tr><td>Temper</td><td>Pallas and the pipes (3.505)</td></tr>
+        <tr><td>Lovers</td><td>poets; the rival; why wives are not loved (3.585&ndash;586)</td></tr>
+        <tr><td>The guard</td><td>secret letters; the city of alibis (to 3.644)</td></tr>
+      </table>
+      <span class="bp-rule">Love as an art with rules. Ask each time: who benefits from this advice, and how serious is the teacher?</span>
+    </div>
+    <p class="note">Set it out like this: date in the margin, title underlined, table ruled, the key point boxed.</p>
+    <div class="copybar"><span class="cb-txt">Ovid table copied?</span>
+      <button class="btn-unlock" id="unlock_yov" onclick="tickNotes('yov',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_yov">The questions unlock when you have copied the notes above into your folder.</div>
+    <div class="qs-locked" id="qs_yov"><div id="yovBody"></div></div>
+  </div></div>
+
+  <div class="panel" id="p-ysc"><div class="card">
+    <h2>5 &middot; Greek sculpture (Week 2)</h2>
+    <p><span class="lead">Revision notes.</span> Free-standing and architectural sculpture: every prescribed piece, with date, material and the one thing to say about it. Last summer every candidate dropped marks on the one-mark identification questions. Learn the table.</p>
+    <h3>Free-standing sculpture</h3>
+    <table class="gram">
+      <tr><th>Piece</th><th>Date, material</th><th>Know</th></tr>
+      <tr><td class="rl">New York Kouros</td><td>c. 600&ndash;590, marble</td><td>Attic grave marker; Egyptian stance, left foot forward; anatomy as pattern</td></tr>
+      <tr><td class="rl">Kleobis and Biton</td><td>c. 580, marble</td><td>Delphi; Argive, stocky; Herodotus&rsquo; story of the brothers who pulled their mother&rsquo;s cart</td></tr>
+      <tr><td class="rl">Berlin Standing Goddess</td><td>c. 570&ndash;560, marble</td><td>Attica; pomegranate, polos, traces of red paint</td></tr>
+      <tr><td class="rl">Anavysos Kouros</td><td>c. 530, marble</td><td>grave of Kroisos, killed in the front rank; fuller, rounder modelling</td></tr>
+      <tr><td class="rl">Peplos Kore</td><td>c. 530, marble</td><td>Acropolis; paint survives; buried after the Persian sack</td></tr>
+      <tr><td class="rl">Aristodikos Kouros</td><td>c. 500&ndash;490, marble</td><td>the last of the kouroi: short hair, arms free of the body</td></tr>
+      <tr><td class="rl">Delphic Charioteer</td><td>c. 478&ndash;474, bronze</td><td>dedicated by Polyzalos of Gela; inlaid eyes; long robe; Severe style</td></tr>
+      <tr><td class="rl">Artemision Zeus</td><td>c. 460, bronze</td><td>from the sea off Cape Artemision; Zeus or Poseidon; strong from the front only</td></tr>
+      <tr><td class="rl">Diskobolos, Myron</td><td>c. 450, bronze (Roman marble copies)</td><td>one moment of a movement; calm face</td></tr>
+      <tr><td class="rl">Doryphoros, Polykleitos</td><td>c. 440, bronze (Roman marble copies)</td><td>the Canon; contrapposto; proportion</td></tr>
+      <tr><td class="rl">Aphrodite of the Agora</td><td>c. 420&ndash;400, marble</td><td>clinging, transparent drapery</td></tr>
+      <tr><td class="rl">Eirene and Ploutos, Kephisodotos</td><td>c. 375&ndash;370, bronze (Roman marble copy)</td><td>Peace holding Wealth; a personification; tender gaze</td></tr>
+      <tr><td class="rl">Aphrodite of Knidos, Praxiteles</td><td>c. 350, marble (Roman copies)</td><td>first monumental female nude; water jar and drapery</td></tr>
+      <tr><td class="rl">Hermes and Dionysus</td><td>c. 340, marble</td><td>found in the temple of Hera at Olympia; S-curve; soft finish</td></tr>
+      <tr><td class="rl">Antikytheran Youth</td><td>c. 340&ndash;330, bronze</td><td>from a shipwreck; original bronze; raised arm held a lost object</td></tr>
+      <tr><td class="rl">Apoxyomenos, Lysippos</td><td>c. 330, bronze (Roman marble copy)</td><td>athlete scraping; small head; arms reach into the viewer&rsquo;s space</td></tr>
+    </table>
+    <h3>Architectural sculpture</h3>
+    <table class="gram">
+      <tr><th>Building</th><th>Date</th><th>Know</th></tr>
+      <tr><td class="rl">Temple of Artemis, Corcyra: pediment</td><td>c. 580</td><td>central Gorgon (Medusa) with Pegasus and Chrysaor, between two panthers; small scenes in the corners; scale changes</td></tr>
+      <tr><td class="rl">Temple C, Selinus: metope</td><td>c. 550&ndash;530</td><td>Herakles carrying the Kerkopes upside down on a pole; frontal faces</td></tr>
+      <tr><td class="rl">Siphnian Treasury, Delphi: Ionic frieze</td><td>c. 525</td><td>north: gods against giants; east: seated gods and a duel at Troy; marble, once painted</td></tr>
+      <tr><td class="rl">Temple of Aphaia, Aigina: pediments</td><td>c. 500&ndash;480</td><td>battles at Troy with Athena in the centre; compare the dying warrior of the west (earlier) and of the east (later)</td></tr>
+      <tr><td class="rl">Temple of Zeus, Olympia: pediments</td><td>c. 470&ndash;456</td><td>east: Pelops and Oinomaos before the race, Zeus central, still; west: Lapiths and Centaurs, Apollo central, calm</td></tr>
+      <tr><td class="rl">Temple of Zeus, Olympia: metopes</td><td>c. 470&ndash;456</td><td>labours of Herakles: the Cretan Bull (crossing diagonals), the Garden of the Hesperides (Atlas, the apples, Athena helping), the Stables of Augeas</td></tr>
+      <tr><td class="rl">Parthenon, Athens: metopes</td><td>447&ndash;432</td><td>south XXVI, XXVII, XXVIII: Lapiths and Centaurs</td></tr>
+      <tr><td class="rl">Parthenon: Ionic frieze</td><td>447&ndash;432</td><td>the Panathenaic procession; horsemen; the peplos scene and seated gods on the east</td></tr>
+      <tr><td class="rl">Parthenon: pediments</td><td>447&ndash;432</td><td>east: birth of Athena; west: contest of Athena and Poseidon</td></tr>
+      <tr><td class="rl">Temple of Apollo, Bassae: Ionic frieze</td><td>c. 420&ndash;400</td><td>inside the cella; Greeks against Amazons, Lapiths against Centaurs; violent, with flying drapery</td></tr>
+    </table>
+    <h3>The arguments</h3>
+    <p><b>Is it a story of growing naturalism?</b> From pattern (New York Kouros) to observed anatomy (Anavysos, Aristodikos), to weight-shift (Doryphoros), to the body in the round (Apoxyomenos). But the Canon is an ideal and not a portrait; the fourth century adds mood and softness and not more accuracy; and the kouroi were never trying to be lifelike. E. H. Gombrich called the change the Greek revolution; J. J. Pollitt described the move from character (<i>ethos</i>) to emotion (<i>pathos</i>).</p>
+    <p><b>Material matters.</b> Bronze allows open poses (the Zeus, the Charioteer&rsquo;s arm); marble needs supports (the tree trunk of the Hermes). Most famous bronzes survive only as Roman marble copies, so say &lsquo;copy&rsquo; when it is one.</p>
+    <p><b>Filling the space.</b> A pediment is a triangle: Corcyra changes scale; Aigina uses fallen and crouching fighters; Olympia and the Parthenon use reclining figures at the corners. A metope is a square: two or three figures, strongest when they cross (the Cretan Bull, Parthenon XXVII). A frieze is a continuous band: procession or battle.</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">Greek sculpture &mdash; the prescribed pieces in date order</span><br>
+      Copy the two tables above: piece, date, material, one thing to know.<br>
+      Free-standing (16): New York Kouros &middot; Kleobis and Biton &middot; Berlin Goddess &middot; Anavysos &middot; Peplos Kore &middot; Aristodikos &middot; Charioteer &middot; Artemision Zeus &middot; Diskobolos &middot; Doryphoros &middot; Aphrodite of the Agora &middot; Eirene and Ploutos &middot; Aphrodite of Knidos &middot; Hermes and Dionysus &middot; Antikytheran Youth &middot; Apoxyomenos.<br>
+      Architectural: Corcyra &middot; Selinus &middot; Siphnian Treasury &middot; Aigina &middot; Olympia (pediments, three metopes) &middot; Parthenon (metopes XXVI&ndash;XXVIII, frieze, pediments) &middot; Bassae.<br>
+      <span class="bp-rule">Name, date, material, original or copy. Then one thing you can see, and what it shows.</span>
+    </div>
+    <p class="note">Set it out like this: date in the margin, title underlined, table ruled, the key point boxed.</p>
+    <div class="copybar"><span class="cb-txt">Sculpture tables copied?</span>
+      <button class="btn-unlock" id="unlock_ysc" onclick="tickNotes('ysc',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_ysc">The questions unlock when you have copied the notes above into your folder.</div>
+    <div class="qs-locked" id="qs_ysc"><div id="yscBody"></div></div>
+  </div></div>
+
+  <div class="panel" id="p-ysch"><div class="card">
+    <h2>6 &middot; Using the scholars (both weeks)</h2>
+    <p><span class="lead">Revision notes.</span> A scholar&rsquo;s name earns nothing by being mentioned. It earns marks when you say what the scholar argues, test it against the text, and say whether you agree. This tab gives you one or two scholars for each topic, ten quick questions on what they argue, and five short written responses.</p>
+    <h3>The four moves</h3>
+    <p><b>1. Claim.</b> Put the scholar&rsquo;s argument in your own words, in one sentence. <b>2. For.</b> Give one moment from the text, or one thing you can see in the statue, that supports it. <b>3. Against.</b> Give one that does not fit. <b>4. Judgement.</b> Say how far you agree, and why.</p>
+    <h3>The scholars</h3>
+    <p><b>Odyssey.</b> <b>Joel Christensen</b> (2025): xenia is the poem&rsquo;s moral measure, and Odysseus does not always pass it: &ldquo;Odysseus himself demands a guest gift from Polyphemus after he has already plundered his household.&rdquo; <b>Patrice Rankine</b> (2025): &ldquo;The men tell stories. Women weave, but both activities require m&#275;tis, cunning intelligence.&rdquo; Use Rankine for Penelope as Odysseus&rsquo; equal.</p>
+    <p><b>Sappho.</b> <b>Miroslav Marcovich</b> (1972) on poem 31: the message is more likely &lsquo;I cannot help being in love with you&rsquo; than jealousy of the man, who is there to show the woman&rsquo;s effect. <b>G. L. Koniaris</b> (1967) on poem 16: Sappho defines the most beautiful thing as &ldquo;whatever a person loves&rdquo;, a claim about any lover, man or woman, and not a woman&rsquo;s reply to men. <b>Odysseus Tsagarakis</b> (1979): do not assume the &lsquo;I&rsquo; of a lyric poem is the poet reporting her own life; the poem &ldquo;is art, not a recording of live experience&rdquo;.</p>
+    <p><b>Plato.</b> <b>F. C. White</b> (1989): the usual view is that the lover&rsquo;s final object is beauty, but for Diotima beauty &ldquo;is always subordinate to that of the good&rdquo;. <b>Gregory Vlastos</b>, as reported by White and Levy: Platonic love treats the individual as a means, a step to be used and left. <b>Martin Warner</b> (1979) replies that if a person is his qualities, then to love the qualities is to love the person.</p>
+    <p><b>Ovid.</b> <b>Peter Jones</b> (2005): the love poems treat their subject &ldquo;lightly, wittily and ironically&rdquo;, and &ldquo;parody and self-mockery are well to the fore&rdquo;; Ovid was &ldquo;indifferent to, even defiant of, political projects&rdquo; at a time of laws on morals. <b>Philip Hardie</b> (2002): Ovid &ldquo;has often been accused of mocking and trivializing love&rdquo;; Hardie wants to move beyond &ldquo;the stereotype of Ovid the cynical realist&rdquo;. <b>Roy Gibson</b>, in your own words: Book 3 steers women to a middle way.</p>
+    <p><b>Greek sculpture</b> (in your own words; do not invent quotations). <b>E. H. Gombrich</b>: the Greek revolution. Greek artists, unlike Egyptian ones, kept correcting the inherited formula against what they saw, so the figure becomes more lifelike with each generation. <b>J. J. Pollitt</b>: fifth-century sculpture shows character (<i>ethos</i>), calm and general; the fourth century turns to emotion and mood (<i>pathos</i>). <b>Andrew Stewart</b>: the Aphrodite of Knidos creates the female nude, and with it the question of who is looking.</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">Scholars &mdash; one argument each</span><br>
+      <table>
+        <tr><th>Topic</th><th>Scholar</th><th>Argument</th></tr>
+        <tr><td>Odyssey</td><td>Christensen</td><td>Odysseus breaks xenia himself (the guest gift from Polyphemus)</td></tr>
+        <tr><td>Odyssey</td><td>Rankine</td><td>stories and weaving both need m&ecirc;tis</td></tr>
+        <tr><td>Sappho</td><td>Marcovich</td><td>31 declares love; it is not about jealousy</td></tr>
+        <tr><td>Sappho</td><td>Koniaris; Tsagarakis</td><td>16 is true of any lover; the lyric &lsquo;I&rsquo; is not the poet&rsquo;s diary</td></tr>
+        <tr><td>Plato</td><td>White</td><td>the lover&rsquo;s final object is the good, not beauty</td></tr>
+        <tr><td>Plato</td><td>Vlastos / Warner</td><td>the individual is used as a means / to love qualities is to love the person</td></tr>
+        <tr><td>Ovid</td><td>Jones; Hardie</td><td>light, ironic, parodic; more than a cynical realist</td></tr>
+        <tr><td>Sculpture</td><td>Gombrich; Pollitt</td><td>the Greek revolution towards nature; ethos to pathos</td></tr>
+      </table>
+      <span class="bp-rule">Claim &rarr; for &rarr; against &rarr; judgement. The scholar starts your argument; the text decides it.</span>
+    </div>
+    <p class="note">Set it out like this: date in the margin, title underlined, table ruled, the key point boxed.</p>
+    <div class="copybar"><span class="cb-txt">Scholars table copied?</span>
+      <button class="btn-unlock" id="unlock_ysch" onclick="tickNotes('ysch',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_ysch">The questions unlock when you have copied the notes above into your folder.</div>
+    <div class="qs-locked" id="qs_ysch"><div id="yschBody"></div></div>
+  </div></div>
+
+  <div class="panel" id="p-trans"><div class="card">
+    <h2>7 &middot; Written answers</h2>
+    <p>Five ten-mark answers, one for each topic. You write a 30-mark essay every Thursday, so the writing here is the other kind of question: short, exact, with no introduction and no conclusion. Do the first three in Week 1 and the last two in Week 2. Have the text or the picture in front of you for each. After the five ten-mark answers there are <b>five responses to a scholar</b>, one for each topic, from tab 6: four or five sentences each (claim, for, against, judgement).</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">A ten-mark answer</span><br>
+      1. <b>Plan five or six pairs.</b> A pair = a point + a reference (a quotation, a line, a detail you can see).<br>
+      2. <b>Every pair has a because.</b> Say what the reference shows. A pair with no because earns the reference mark only.<br>
+      3. <b>Cover the whole source:</b> references from the start, the middle and the end, or from every part of the statue or scene.<br>
+      4. <b>No retelling, no introduction, no conclusion.</b> Start with your first point.<br>
+      5. <b>No point should depend on one English word</b> of a translation.<br>
+      6. <b>200 to 250 words</b>, about twelve minutes.<br>
+      <span class="bp-rule">AO1 5 marks for the references, AO2 5 marks for what you say they show.</span>
+    </div>
+    <p class="note">For each question: plan the pairs in the small box, write the answer, reveal the model, and mark yourself honestly: 2 if you have five pairs, each with a because, from across the source; 1 if you have three or four, or the becauses are thin; 0 if not done. Mr Beasley&rsquo;s AI checker reads these afterwards. For a response to a scholar: 2 if you have the claim in your own words, evidence for and against, and a judgement; 1 if one of those is missing; 0 if not done.</p>
+    <div class="copybar"><span class="cb-txt">Method copied into your folder?</span>
+      <button class="btn-unlock" id="unlock_trans" onclick="tickNotes('trans',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_trans">The written tasks unlock when you have copied the method into your folder.</div>
+    <div class="qs-locked" id="qs_trans"><div id="transBody"></div></div>
+  </div></div>
+
+  <div class="panel" id="p-spot"><div class="card">
+    <h2>8 &middot; Spot the Error</h2>
+    <p>Each summary has <b>one</b> wrong detail. Click the part that is wrong. Two for each topic.</p>
+    <div class="bookpage">
+      <span class="bp-date">[today&rsquo;s date]</span>
+      <span class="bp-title">Precise detail checklist</span><br>
+      Before you use a detail, check: <b>which book, poem or speaker</b>; <b>which sculptor, date and material</b>; <b>what exactly</b> happens or can be seen.<br>
+      <span class="bp-rule">A wrong speaker or sculptor costs the mark for the whole point.</span>
+    </div>
+    <div class="copybar"><span class="cb-txt">Checklist copied?</span>
+      <button class="btn-unlock" id="unlock_spot" onclick="tickNotes('spot',this)">&#10003; I have copied these notes</button></div>
+    <div class="lockmsg" id="lock_spot">The questions unlock when you have copied the checklist into your folder.</div>
+    <div class="qs-locked" id="qs_spot"><div id="spotBody"></div></div>
+  </div></div>
+
+  <!-- SCOREBOARD -->
+  <div class="panel" id="p-board">
+    <div class="card">
+      <h2>Scoreboard</h2>
+      <div class="big-score"><span id="boardNow">0</span> / <span id="boardMax">0</span></div>
+      <div class="cta" id="boardMsg">Work through the tabs to build your score.</div>
+      <table class="board" id="boardTable"></table>
+      <div id="ragBox" style="margin-top:18px;">
+        <h3 style="color:#f0e7c8;font-size:16px;margin-bottom:8px;">How confident are you across the five topics?</h3>
+        <div class="selfmark">
+          <button class="sm nailed" onclick="setRag('green',this)">Green &mdash; confident</button>
+          <button class="sm close" onclick="setRag('amber',this)">Amber &mdash; getting there</button>
+          <button class="sm notyet" onclick="setRag('red',this)">Red &mdash; need more help</button>
+        </div>
+        <p class="note" style="margin-top:6px;">This tells Mr Beasley how you feel, not just how you scored.</p>
+      </div>
+      <div class="btnrow"><button class="btn btn-gold" onclick="window.print()">Print / save my result</button></div>
+      <p class="note" style="margin-top:12px;">Due Friday 4 December. The tabs where you scored lowest are the ones to reread before the mock.</p>
+    </div>
+  </div>
+
+  <footer>Year 13 Revision Workbook &middot; U6 Classical Civilisation &middot; 23 November to 4 December 2026</footer>
+</div>
+<script>
+/* ---------------- QUESTION BANKS (Year 13 revision workbook (Odyssey, Sappho, Plato, Ovid, Greek sculpture), 23 Nov - 4 Dec 2026; built 22 Nov 2026 by build_y13rev.py) ---------------- */
+const ROSTER = ["Isobel", "Jared", "Krisha", "Tom"];
+const CLS = "U6CC";
+const BK_yod = [{"q": "Which of these books of the Odyssey is NOT prescribed?", "opts": ["Book 7", "Book 21", "Book 20", "Book 13"], "a": 2, "why": "Prescribed: 1, 5–13, 16–19, 21–23. Books 2–4, 14, 15, 20 and 24 are not. You may still refer to them."}, {"q": "Who recognises Odysseus in Book 17?", "opts": ["The swineherd Eumaeus", "The bard Phemius", "The dog Argos", "The nurse Eurycleia"], "a": 2, "why": "Argos, neglected on a dung-heap, wags his tail and dies. Odysseus hides a tear. Recognition by instinct, with no token."}, {"q": "What does Antinous do to the beggar in Book 17?", "opts": ["Pours wine over him", "Kicks him on the road", "Throws a footstool", "Sets the dogs on him"], "a": 2, "why": "The footstool strikes his shoulder and he stands like a rock. The kick on the road is Melanthius. Each insult is a breach of xenia that the poem counts."}, {"q": "Why is Odysseus pleased when Penelope shows herself to the suitors in Book 18?", "opts": ["She recognises him across the hall", "She orders the suitors out of the house", "She swears that she will never remarry", "She draws gifts from the suitors"], "a": 3, "why": "She speaks of remarrying and they send for gifts. He sees her cunning at work. It is evidence that husband and wife are alike."}, {"q": "How did Odysseus get the scar that Eurycleia recognises?", "opts": ["From a boar on Parnassus", "From a spear at Troy", "From a fall on Ithaca", "From the Cyclops’ cave"], "a": 0, "why": "On a hunt with the sons of Autolycus, his grandfather. Homer stops the scene to tell it: the digression Auerbach made famous."}, {"q": "In Penelope’s dream in Book 19, what kills the geese?", "opts": ["A fox", "An eagle", "A hunter", "A storm"], "a": 1, "why": "An eagle from the mountain, which then speaks and says it is her husband. She weeps for the geese, and says the dream may have come by the gate of ivory."}, {"q": "To what is Odysseus compared as he strings the bow?", "opts": ["A bard stringing a lyre", "A shipwright boring timber", "A smith tempering an axe", "A fisherman casting a line"], "a": 0, "why": "The string sings like a swallow. The simile joins the killer to the poet: the man who tells stories is about to end one."}, {"q": "Which two men are spared in the hall in Book 22?", "opts": ["Leodes and Amphinomus", "Leodes and Phemius", "Amphinomus and Medon", "Phemius and Medon"], "a": 3, "why": "The bard and the herald, at Telemachus’ word. Leodes, the suitors’ priest, pleads and is killed; Amphinomus, the decent suitor, was killed earlier."}, {"q": "How does Penelope test Odysseus in Book 23?", "opts": ["She orders the bed to be moved", "She asks him to string the bow again", "She shows him the unfinished web", "She asks what clothes he wore to Troy"], "a": 0, "why": "The bed cannot be moved: he built it round a living olive tree. His anger is the proof. The clothes question belongs to Book 19."}, {"q": "Which evidence best supports the view that the revenge is excessive?", "opts": ["The death of Melanthius’ dog", "The shooting of Antinous", "The refusal of Eurymachus’ offer", "The hanging of the twelve maids"], "a": 3, "why": "They were slaves, and Telemachus chooses a shameful death for them. Emily Wilson has drawn attention to how the poem treats them. Antinous is the ringleader; Eurymachus offers payment only when cornered."}];
+const BK_ysa = [{"q": "What draws Aphrodite’s chariot in poem 1?", "opts": ["Sparrows", "Doves", "Horses", "Swans"], "a": 0, "why": "Sparrows, whirring down from heaven. Poem 1 is the only poem that survives complete."}, {"q": "What form does poem 1 take?", "opts": ["A prayer", "A wedding song", "A lament", "A letter"], "a": 0, "why": "Address with titles, a reminder of past help, a request. Sappho uses the form seriously and with humour: the goddess asks what is wrong this time."}, {"q": "What is a priamel, the device that opens poem 16?", "opts": ["A question that does not expect an answer", "A comparison drawn out over several lines", "A list of other views, then the speaker’s own", "A direct address to someone who is absent"], "a": 2, "why": "Some say cavalry, some infantry, some ships; I say whatever one loves. The form sets love against the values of war."}, {"q": "Which mythical figure does Sappho use as proof in poem 16?", "opts": ["Penelope", "Andromache", "Helen", "Medea"], "a": 2, "why": "Helen left the best of husbands and sailed to Troy. She is used as an example of the power of desire, without blame."}, {"q": "Which of these is NOT one of the symptoms in poem 31?", "opts": ["A fire under the skin", "Tears streaming down", "A tongue that breaks", "A humming in the ears"], "a": 1, "why": "The list: voice gone, tongue broken, fire under the skin, eyes blind, ears humming, sweat, trembling, greener than grass, near death."}, {"q": "What consolation does the speaker offer in poem 94?", "opts": ["The favour of Aphrodite", "The hope of a letter", "The memory of shared days", "The promise of a visit"], "a": 2, "why": "Garlands, perfume, soft beds. The departing woman is told to remember. Parting, probably for marriage, is the occasion."}, {"q": "What does glukupikron (poem 130) mean?", "opts": ["Much-enduring", "Limb-loosening", "Golden-throned", "Sweet-bitter"], "a": 3, "why": "Eros is a sweet-bitter creature that cannot be fought. Limb-loosener is the other word for him in the same fragment."}, {"q": "Why must every argument about Sappho be cautious?", "opts": ["Her dialect cannot now be translated", "Almost all her poetry is in fragments", "Her poems were rewritten by Roman editors", "Her poems were never performed"], "a": 1, "why": "We often lack the speaker, the occasion and the ending. The specification asks you to respond to the issues of fragmentary material."}];
+const BK_ypl = [{"q": "At whose house is the Symposium set?", "opts": ["Agathon’s", "Pausanias’", "Socrates’", "Alcibiades’"], "a": 0, "why": "The tragic poet Agathon is celebrating his first victory, in 416 BC. The guests agree to make speeches in praise of Eros."}, {"q": "Who argues that an army of lovers would be unbeatable?", "opts": ["Eryximachus", "Phaedrus", "Agathon", "Pausanias"], "a": 1, "why": "A lover would be ashamed to be seen deserting by his beloved. His examples are Alcestis and Achilles."}, {"q": "Who distinguishes Common from Heavenly love?", "opts": ["Pausanias", "Diotima", "Aristophanes", "Phaedrus"], "a": 0, "why": "Two Aphrodites, Pandemos and Urania. Common love is of the body; Heavenly love is of the mind and aims at virtue."}, {"q": "In Aristophanes’ myth, why did Zeus cut the first humans in half?", "opts": ["They had grown too many", "They had refused to sacrifice", "They had attacked the gods", "They had stolen fire"], "a": 2, "why": "Cutting them weakened them and doubled the number of worshippers. Each half then longs for the other: love is the pursuit of the whole."}, {"q": "How many kinds of original human does Aristophanes describe?", "opts": ["Six", "Two", "Four", "Three"], "a": 3, "why": "Male, female and androgynous. The three kinds explain desire between men, between women, and between men and women."}, {"q": "Who are the parents of Eros in Diotima’s account?", "opts": ["Chaos and Gaia", "Zeus and Aphrodite", "Ares and Aphrodite", "Poros and Penia"], "a": 3, "why": "Resource and Poverty, at the feast for Aphrodite’s birth. So Eros is always needy and always resourceful: a daimon, between god and mortal."}, {"q": "What, according to Diotima, does love desire?", "opts": ["To escape from the body", "To have the good for ever", "To be loved in return", "To find its other half"], "a": 1, "why": "And its work is giving birth in beauty, in body or in soul. Finding the other half is Aristophanes’ account, which Diotima corrects."}, {"q": "What is the first step on Diotima’s ladder?", "opts": ["Love of laws and practices", "Love of knowledge", "Love of one beautiful body", "Love of all beautiful souls"], "a": 2, "why": "One body, then all bodies, souls, laws and practices, knowledge, and last the Form of Beauty itself."}, {"q": "To what does Alcibiades compare Socrates?", "opts": ["A midwife of ideas", "A gadfly on a horse", "A statue of Silenus", "A stingray that numbs"], "a": 2, "why": "Ugly outside, divine within. The gadfly, the midwife and the stingray are images from other dialogues."}, {"q": "Why is it hard to say what Plato himself thinks about love?", "opts": ["He later withdrew the whole dialogue", "He wrote the dialogue as a young man", "The ending of the dialogue is lost", "He gives every view to a character"], "a": 3, "why": "Diotima’s teaching reaches us through Socrates and through a narrator recalling the party years later. The form keeps the author at a distance."}];
+const BK_yov = [{"q": "Whom does Ovid say he is arming in Book 3?", "opts": ["The Trojans", "The Sabines", "The Amazons", "The Greeks"], "a": 2, "why": "He armed the Greeks, the men, in Books 1 and 2. Now he arms the other side. The military image treats love as a contest between the sexes."}, {"q": "Which hero does Ovid blame for Dido’s death at 3.39–42?", "opts": ["Aeneas", "Jason", "Demophoon", "Theseus"], "a": 0, "why": "Aeneas gave her the sword and the cause. Ovid lists him with Jason, Theseus and Demophoon as men who deceived women: a pointed use of Virgil’s hero."}, {"q": "What does Ovid say about his own age at 3.113?", "opts": ["Rome is now golden, and he is glad", "Rome has lost the virtue of its founders", "Rome is too crowded for lovers", "Rome should return to simple ways"], "a": 0, "why": "There was rough simplicity before; now there is refinement (cultus). It turns the moralists’ praise of old Rome upside down."}, {"q": "What is Ovid’s rule about make-up?", "opts": ["Use it only at festivals", "Avoid it, since natural beauty is best", "Use it, but never let him watch", "Let him help you choose it"], "a": 2, "why": "Much is ugly in the doing and pleasing when done. Art should hide itself."}, {"q": "Which myth does Ovid use to recommend singing (3.311)?", "opts": ["The Sirens", "Orpheus and Eurydice", "Pan and Syrinx", "Apollo and Marsyas"], "a": 0, "why": "The Sirens held ships with their voices. A deadly myth is cut down to an advertisement for singing lessons."}, {"q": "What does Ovid say of Sappho in his reading list (3.331)?", "opts": ["That nothing is more wanton", "That she taught him to write", "That she should be avoided", "That she is the tenth Muse"], "a": 0, "why": "She is on a list of poets a woman should know, between the Greeks and the Roman elegists, with Ovid’s own works at the end."}, {"q": "Why did Pallas throw away her pipes (3.505)?", "opts": ["She was beaten in a contest by Marsyas", "She was mocked at a feast by Venus", "She saw her puffed cheeks in the water", "She found the sound of them too harsh"], "a": 2, "why": "The story supports the advice to control anger, because rage spoils the face."}, {"q": "Why, according to Ovid, are wives not loved (3.585–586)?", "opts": ["Their dowries make them proud", "Their beauty fades after children", "Their husbands were chosen by their fathers", "Their husbands can come at any time"], "a": 3, "why": "Desire needs an obstacle: add a door and a doorkeeper. The joke runs directly against Augustus’ promotion of marriage."}, {"q": "For what was Ovid banished in AD 8?", "opts": ["A plot against Augustus", "A poem and a mistake", "A satire on the Senate", "An affair with Julia"], "a": 1, "why": "His own phrase, carmen et error. The poem was the Ars Amatoria; he never says what the mistake was."}, {"q": "Which statement best fits Gibson’s reading of Book 3?", "opts": ["The advice frees women from men’s control", "The advice steers women towards a middle way", "The advice is aimed at wives and mothers", "The advice is a serious moral programme"], "a": 1, "why": "Neither too plain nor too showy, in dress, hair and behaviour. That limits how far Book 3 can be read as being on women’s side."}];
+const BK_ysc = [{"q": "Which statue marked the grave of Kroisos, killed in the front rank of battle?", "opts": ["The New York Kouros", "The Aristodikos Kouros", "Kleobis and Biton", "The Anavysos Kouros"], "a": 3, "why": "c. 530 BC. The base asks the passer-by to stop and mourn. The modelling is fuller and rounder than the New York Kouros of two generations earlier."}, {"q": "Which statue was dedicated at Delphi by Polyzalos of Gela?", "opts": ["The Delphic Charioteer", "The Diskobolos", "The Antikytheran Youth", "The Artemision Zeus"], "a": 0, "why": "A bronze original of c. 478–474 BC, part of a chariot group for a victory in the Pythian Games. Inlaid eyes, long robe, the calm of the Severe style."}, {"q": "Which of these survives as an original Greek bronze?", "opts": ["The Artemision Zeus", "The Doryphoros", "The Apoxyomenos", "The Diskobolos"], "a": 0, "why": "Recovered from the sea off Cape Artemision. The other three were bronzes that we know only from Roman marble copies."}, {"q": "Which sculptor wrote the Canon, a treatise on proportion?", "opts": ["Polykleitos", "Myron", "Praxiteles", "Lysippos"], "a": 0, "why": "The Doryphoros of c. 440 BC is thought to demonstrate it: contrapposto, with tensed and relaxed limbs balanced across the body."}, {"q": "Which statue was the first monumental female nude?", "opts": ["The Aphrodite of the Agora", "The Peplos Kore", "The Aphrodite of Knidos", "The Berlin Standing Goddess"], "a": 2, "why": "By Praxiteles, c. 350 BC, in marble, known from Roman copies. She has laid her drapery on a water jar. The Aphrodite of the Agora is clothed in clinging drapery."}, {"q": "Which statue was found in the temple of Hera at Olympia?", "opts": ["The Apoxyomenos", "Hermes and Dionysus", "The Aristodikos Kouros", "Eirene and Ploutos"], "a": 1, "why": "Marble, c. 340 BC, linked with Praxiteles. An S-curve that needs the tree-trunk support, and a soft finish to the surface."}, {"q": "What is new about the Apoxyomenos of Lysippos?", "opts": ["A smaller head and arms reaching forward", "A smiling face and hair cut as pattern", "The first use of bronze for an athlete", "The first use of contrapposto in a statue"], "a": 0, "why": "c. 330 BC. A new canon of slimmer proportions, and a pose that has no single main view. Contrapposto is a century older."}, {"q": "What stands in the centre of the Corcyra pediment?", "opts": ["A Gorgon", "Athena", "Apollo", "Zeus"], "a": 0, "why": "Medusa, in a running pose, with Pegasus and Chrysaor, between two panthers. c. 580 BC. The small corner scenes are on a different scale."}, {"q": "Which god stands at the centre of the west pediment at Olympia?", "opts": ["Athena", "Zeus", "Apollo", "Dionysus"], "a": 2, "why": "Calm, arm outstretched, above the fight of Lapiths and Centaurs. Zeus is at the centre of the east pediment, before the race of Pelops and Oinomaos."}, {"q": "Which Olympia metope shows Herakles and the bull pulling away from each other?", "opts": ["The Kerkopes", "The Cretan Bull", "The Stables of Augeas", "The Garden of the Hesperides"], "a": 1, "why": "Two crossing diagonals fill the square. The Hesperides metope is three upright figures; the Kerkopes metope is from Temple C at Selinus."}, {"q": "What is the subject of the prescribed Parthenon metopes XXVI to XXVIII?", "opts": ["Lapiths fighting Centaurs", "The sack of Troy", "Greeks fighting Amazons", "Gods fighting Giants"], "a": 0, "why": "From the south side. The Amazons were on the west, the Giants on the east and Troy on the north."}, {"q": "Where was the Ionic frieze placed at Bassae?", "opts": ["Above the outer columns", "Along the base of the temple", "Across the two pediments", "Inside the cella"], "a": 3, "why": "Temple of Apollo, c. 420–400 BC. Greeks against Amazons and Lapiths against Centaurs, with violent movement and flying drapery."}];
+const BK_ysch = [{"q": "Which scene is Christensen’s example of Odysseus breaking xenia?", "opts": ["Refusing the offer Eurymachus makes", "Accepting gifts from the Phaeacians", "Testing Eumaeus with the cloak story", "Demanding a gift from Polyphemus"], "a": 3, "why": "He had already helped himself to the cheeses. Christensen’s point is that the code used against the suitors is one Odysseus has broken."}, {"q": "According to Rankine, what do storytelling and weaving both require?", "opts": ["Bia", "Xenia", "Mētis", "Kleos"], "a": 2, "why": "Cunning intelligence. It puts Penelope’s web beside Odysseus’ tales as the same kind of skill."}, {"q": "How does Marcovich read Sappho 31?", "opts": ["As a prayer for release", "As an attack of jealousy", "As a wedding song", "As a declaration of love"], "a": 3, "why": "The man is there to measure the woman’s effect: he can sit near her and stay calm, and the speaker cannot."}, {"q": "What does Tsagarakis warn against?", "opts": ["Comparing Sappho with the later love poets", "Reading the lyric ‘I’ as the poet’s own life", "Reading the fragments only in translation", "Treating the wedding songs as her own work"], "a": 1, "why": "He separates the poetic ‘I’ from the personal one. The poem is crafted for performance and is not a diary."}, {"q": "On Koniaris’ reading, whom is the claim of poem 16 true of?", "opts": ["Any lover, man or woman", "Poets as against soldiers", "Women as against men", "Helen and no one else"], "a": 0, "why": "‘Whatever a person loves’: the pronoun is general. That argues against reading the poem only as a woman’s answer to men’s values."}, {"q": "According to White, what is the lover’s final object for Diotima?", "opts": ["Beauty itself", "The good", "The beloved person", "Pleasure"], "a": 1, "why": "Beauty is where the lover gives birth; what he wants is to possess the good for ever. White calls the usual view, that it is beauty, a mistake."}, {"q": "What is Vlastos’ objection to Platonic love?", "opts": ["It depends on belief in the gods", "It leaves women out of account", "It treats the individual as a means", "It allows too much to the body"], "a": 2, "why": "The beloved is a step on the ladder, to be used and left. Warner and Levy both answer the objection."}, {"q": "How does Jones describe the tone of Ovid’s love poetry?", "opts": ["Tender and nostalgic", "Bitter and disillusioned", "Light, witty and ironic", "Solemn and moralising"], "a": 2, "why": "With parody and self-mockery to the fore. He also calls Ovid indifferent to, even defiant of, political projects."}, {"q": "What did Gombrich call the change in Greek art towards observed nature?", "opts": ["The Greek revolution", "The Classical canon", "The Severe style", "The Archaic smile"], "a": 0, "why": "Artists began to correct the inherited formula against what they saw. The kouroi from New York to Aristodikos are the usual evidence."}, {"q": "In Pollitt’s terms, what does fourth-century sculpture turn towards?", "opts": ["Mimesis", "Kleos", "Ethos", "Pathos"], "a": 3, "why": "From character (ethos), calm and general, to emotion and mood (pathos): compare the Doryphoros with the Hermes and Dionysus or Eirene and Ploutos."}];
+const TRANS = [{"label": "Week 1 · Odyssey", "lat": "Read the bed test in <b>Book 23</b> (from Penelope telling Eurycleia to move the bed, to the embrace). <b>Explain how Homer makes the reunion of Odysseus and Penelope effective.</b> [10]", "plan": "Plan here: five or six pairs (point / reference).", "model": "<b>1.</b> Penelope tests him: she tells Eurycleia to move the bed, because she will not accept a husband on appearance alone; it shows her as his equal in cunning. <b>2.</b> Odysseus loses his temper, the first time in the poem he is caught off guard, because the trick works on the trickster; his anger is the proof she needs. <b>3.</b> He describes the bed built round a living olive tree, because a secret only the two of them share is a stronger token than the scar; the rooted tree stands for the marriage that could not be moved. <b>4.</b> Her knees give way and she runs to him in tears, because twenty years of caution end in a moment; she explains her fear of being deceived, so her coldness is shown as loyalty. <b>5.</b> The simile of shipwrecked sailors reaching land is given to Penelope, because it describes his experience and is applied to her: the poem makes her suffering equal to his. Athena then holds back the dawn, because the night has to be long enough for what they have to tell.", "tip": "Check: five or six pairs? A because for every one? References from across the source? No retelling?", "ph": "Write your answer here (200-250 words)...", "h": 230, "mhead": "A model answer in outline (five pairs):"}, {"label": "Week 1 · Sappho", "lat": "Read <b>Sappho 31</b> in your booklet. <b>Explain how Sappho presents the effects of desire in this poem.</b> [10]", "plan": "Plan here: five or six pairs (point / reference).", "model": "<b>1.</b> The man sitting opposite the woman seems equal to the gods, because only someone more than mortal could sit so close and stay calm; it sets a standard the speaker cannot meet. <b>2.</b> The woman&rsquo;s sweet voice and laughter make the speaker&rsquo;s heart shake, because desire begins with hearing and seeing and is at once physical. <b>3.</b> Speech fails and the tongue breaks, because the poet, whose art is the voice, loses hers; desire attacks the thing that defines her. <b>4.</b> Fire runs under the skin, the eyes see nothing, the ears hum, sweat pours and trembling takes her, because the symptoms are listed one after another with no pause, as if the body were being taken apart; desire is presented as an illness she observes in herself. <b>5.</b> She is greener than grass and seems close to death, because the list climbs to its limit; but the last surviving words turn to endurance, so the poem may have ended with recovery. We cannot know, because the poem is a fragment.", "tip": "Check: five or six pairs? A because for every one? References from across the source? No retelling?", "ph": "Write your answer here (200-250 words)...", "h": 230, "mhead": "A model answer in outline (five pairs):"}, {"label": "Week 1 · Plato", "lat": "<b>Explain why, in Diotima&rsquo;s account, love of one beautiful body is only the first step for the lover.</b> [10]", "plan": "Plan here: five or six pairs (point / reference).", "model": "<b>1.</b> Eros is the child of Poros and Penia, because love is by nature a lack that keeps seeking; it cannot rest in what it has. <b>2.</b> Love desires to possess the good for ever, because what the lover really wants is not a person but lasting good; a body, which changes and dies, cannot supply that. <b>3.</b> The lover sees that the beauty of one body is the same as the beauty of another, because beauty is one thing found in many; to stay with one body would be a mistake of understanding. <b>4.</b> He then values beauty of soul above beauty of body, and after that the beauty of laws, practices and knowledge, because each step is more general and more lasting than the one before. <b>5.</b> At the top he sees the Form of Beauty itself, which neither grows nor fades, because only this can be possessed for ever; there he gives birth to true virtue and not to images of it. So the first body is a starting point: necessary, but to be left behind, which is the feature of the account that many readers find cold.", "tip": "Check: five or six pairs? A because for every one? References from across the source? No retelling?", "ph": "Write your answer here (200-250 words)...", "h": 230, "mhead": "A model answer in outline (five pairs):"}, {"label": "Week 2 · Ovid", "lat": "Read the passage on <b>cultus</b> in Ars Amatoria 3, from the rough simplicity of old Rome to the advice on hair (about <b>3.101&ndash;168</b>). <b>Explain how Ovid makes his advice in this passage entertaining.</b> [10]", "plan": "Plan here: five or six pairs (point / reference).", "model": "<b>1.</b> He begins with cultus as a principle, comparing the tended vine and field, because farming language is the language of serious didactic poetry; using it of a woman&rsquo;s appearance is the joke of the whole poem. <b>2.</b> He says there was rough simplicity before and now Rome is golden, because it turns upside down the moralists&rsquo; praise of the past; the audience hear a tease at the official taste for old virtue. <b>3.</b> He says others may like the old days and he is glad to be born now, because the teacher steps forward in his own voice, cheerful and unashamed. <b>4.</b> He rejects jewels and gold for neatness, because the expert surprises us by recommending restraint; elegance is what attracts. <b>5.</b> He lists hairstyles to suit each shape of face, with goddesses and heroines as models, because the catalogue is a learned form used for hairdressing; and he ends by saying the styles cannot be counted, like acorns or bees, because the grand comparison is spent on something trivial.", "tip": "Check: five or six pairs? A because for every one? References from across the source? No retelling?", "ph": "Write your answer here (200-250 words)...", "h": 230, "mhead": "A model answer in outline (five pairs):"}, {"label": "Week 2 · Greek sculpture", "lat": "Look at the <b>Doryphoros</b> and the <b>Hermes and Dionysus</b>. <b>Explain what has changed in the way the male body is shown between the two statues.</b> [10]", "plan": "Plan here: five or six pairs (point / reference).", "model": "<b>1.</b> Stance: the Doryphoros stands in contrapposto with his weight on one leg and his axis nearly upright, because Polykleitos is demonstrating balance; the Hermes sways in an S-curve and leans on a support, because Praxiteles wants ease and not balance. <b>2.</b> Musculature: the Doryphoros has clearly divided muscles, each defined, because the body is built from measured parts (the Canon); the Hermes has soft transitions between the forms, because the surface is treated as skin. <b>3.</b> Subject: a spear-bearer with no story, because he is an ideal type; a god holding the baby Dionysus and teasing him, because the fourth century prefers a moment of feeling between two figures. <b>4.</b> Face and gaze: the Doryphoros looks out calmly at nothing; Hermes looks towards the child with a slight smile, because mood has entered. <b>5.</b> Material: the Doryphoros was bronze and is known from Roman marble copies with added struts; the Hermes is marble, and uses the drapery over the tree trunk as support and as a contrast of texture with the flesh.", "tip": "Check: five or six pairs? A because for every one? References from across the source? No retelling?", "ph": "Write your answer here (200-250 words)...", "h": 230, "mhead": "A model answer in outline (five pairs):"}, {"tab": "sch", "label": "Week 1 · Odyssey · respond to the scholar", "lat": "Joel Christensen (2025): &ldquo;Odysseus himself demands a guest gift from Polyphemus after he has already plundered his household.&rdquo; <b>Respond in four or five sentences: the claim in your own words; one piece of evidence for; one against; your judgement.</b>", "plan": "Notes: for / against.", "model": "Christensen argues that Odysseus breaks the rules of hospitality that he and the poem later use to condemn the suitors. Book 9 supports him: Odysseus enters the cave uninvited, eats the cheeses, and stays against his men&rsquo;s advice in the hope of a gift. Against this, Polyphemus eats his guests, and elsewhere Odysseus is a correct guest (on Scheria he waits to be asked his name); the suitors&rsquo; offence lasts three years and is aimed at a man&rsquo;s wife, son and property. So Christensen is right that the hero is not innocent, but the poem still treats the two cases as different in scale, and Zeus is on Odysseus&rsquo; side in Book 22.", "tip": "Check: did you put the claim in your own words? One piece of evidence for and one against, each with its book, poem, speaker or statue? A judgement?", "ph": "Write your response here (80-120 words)...", "h": 150, "mhead": "A model response:"}, {"tab": "sch", "label": "Week 1 · Sappho · respond to the scholar", "lat": "Miroslav Marcovich (1972) says that the message of poem 31 is more likely to be &lsquo;I cannot help being in love with you&rsquo; than jealousy of the man. <b>Respond in four or five sentences: the claim in your own words; one piece of evidence for; one against; your judgement.</b>", "plan": "Notes: for / against.", "model": "Marcovich reads the poem as a declaration of love in which the man matters only as a contrast. The text supports him: after the first stanza the man disappears, and every symptom (the broken tongue, the fire, the humming ears) is caused by seeing the woman, not by seeing him. Against this, the poem opens with him, sitting close and listening, and a speaker shut out from that place could well be jealous; and we do not have the ending. I agree with Marcovich on balance, because the man is called equal to the gods for bearing what destroys the speaker, which makes him a measure and not a rival; but the fragment cannot prove it.", "tip": "Check: did you put the claim in your own words? One piece of evidence for and one against, each with its book, poem, speaker or statue? A judgement?", "ph": "Write your response here (80-120 words)...", "h": 150, "mhead": "A model response:"}, {"tab": "sch", "label": "Week 1 · Plato · respond to the scholar", "lat": "F. C. White (1989) argues that, for Diotima, whatever part beauty plays in love &ldquo;it is always subordinate to that of the good&rdquo;. <b>Respond in four or five sentences: the claim in your own words; one piece of evidence for; one against; your judgement.</b>", "plan": "Notes: for / against.", "model": "White claims that the lover&rsquo;s real object is the good, and that beauty is only the setting in which he pursues it. Diotima&rsquo;s own definition supports him: love is desire to possess the good for ever, and beauty is what the lover &lsquo;gives birth in&rsquo;, in body or in soul. Against this, the ladder ends with the vision of Beauty itself, described at length as eternal and unchanging, and nothing is said there of a Form of the Good. I think White is right about the definition and that the ladder passage, read alone, gives the usual view; a careful answer says that at the top the lover sees Beauty and produces true virtue, which is the good.", "tip": "Check: did you put the claim in your own words? One piece of evidence for and one against, each with its book, poem, speaker or statue? A judgement?", "ph": "Write your response here (80-120 words)...", "h": 150, "mhead": "A model response:"}, {"tab": "sch", "label": "Week 2 · Ovid · respond to the scholar", "lat": "Peter Jones (2005) says Ovid&rsquo;s love poems treat their subject &ldquo;lightly, wittily and ironically&rdquo;, with &ldquo;parody and self-mockery&rdquo; to the fore. <b>Respond in four or five sentences: the claim in your own words; one piece of evidence for; one against; your judgement.</b>", "plan": "Notes: for / against.", "model": "Jones argues that the Ars Amatoria is a comic performance and not a serious manual. Book 3 supports him: the Sirens become a reason to take singing lessons (3.311), Pallas and her pipes a warning about pulling faces (3.505), and the grand farming language of didactic poetry is spent on hairstyles. Against this, the advice on deceiving a guard and a husband touched a real law, Augustus&rsquo; adultery law of 18 BC, and Ovid was banished in AD 8 partly for this poem; the carpe diem passage on old age is not a joke. I agree that the tone is light, but the lightness was itself a challenge to Augustus, so the poem had serious consequences.", "tip": "Check: did you put the claim in your own words? One piece of evidence for and one against, each with its book, poem, speaker or statue? A judgement?", "ph": "Write your response here (80-120 words)...", "h": 150, "mhead": "A model response:"}, {"tab": "sch", "label": "Week 2 · Greek sculpture · respond to the scholar", "lat": "E. H. Gombrich argued that Greek sculptors, unlike Egyptian ones, kept correcting the inherited figure against what they saw, so that sculpture grew steadily more lifelike: the &lsquo;Greek revolution&rsquo;. <b>Respond in four or five sentences: the claim in your own words; one piece of evidence for; one against; your judgement.</b>", "plan": "Notes: for / against.", "model": "Gombrich claims that the history of Greek sculpture is driven by a wish to match nature. The kouroi support him: the New York Kouros has anatomy cut as pattern, the Anavysos Kouros has rounded, swelling muscle, and the Aristodikos Kouros has short hair and arms free of the body. Against this, the Doryphoros is built to a system of proportions and is an ideal body that nobody has; the fourth century adds mood (the Hermes, Eirene) and not more accuracy; and a kouros was a grave marker or offering, never meant as a likeness. So Gombrich describes the sixth and early fifth centuries well, but after about 450 BC the aim is an idea of the body, and then feeling.", "tip": "Check: did you put the claim in your own words? One piece of evidence for and one against, each with its book, poem, speaker or statue? A judgement?", "ph": "Write your response here (80-120 words)...", "h": 150, "mhead": "A model response:"}];
+const SPOT = [{"words": ["In Book 19", "Eurycleia washes the beggar’s feet,", "recognises a scar", "left by a spear at Troy,", "and is seized by the throat."], "bad": 3, "fix": "The scar was left by a <b>boar on Parnassus</b>, on a hunt with the sons of Autolycus."}, {"words": ["In Book 22", "Antinous is shot first,", "Eurymachus offers compensation,", "and Odysseus spares", "the priest Leodes."], "bad": 4, "fix": "Leodes is <b>killed</b>. The men spared are Phemius the bard and Medon the herald."}, {"words": ["In Sappho 1", "Aphrodite arrives", "in a chariot drawn by sparrows", "and asks", "who has wronged Anactoria."], "bad": 4, "fix": "She asks who wrongs <b>Sappho</b>. Anactoria is the absent woman of poem 16."}, {"words": ["Sappho 16 opens", "with a priamel:", "some say cavalry, some infantry, some ships;", "the speaker says", "the finest thing is to be loved."], "bad": 4, "fix": "The finest thing is <b>whatever one loves</b>. The value lies in the lover’s desire."}, {"words": ["In the Symposium", "Pausanias tells the myth", "of the round people", "cut in half by Zeus,", "who search for their other halves."], "bad": 1, "fix": "The myth is told by <b>Aristophanes</b>. Pausanias distinguishes Common and Heavenly love."}, {"words": ["Diotima says Eros is", "a daimon,", "the child of Poros and Penia,", "and that the ladder of love ends", "with love of beautiful souls."], "bad": 4, "fix": "It ends with the <b>Form of Beauty itself</b>. Souls are the third step."}, {"words": ["In Ars Amatoria 3", "Ovid says he is arming the Amazons,", "praises the simplicity of old Rome,", "and tells women", "to hide how they apply their make-up."], "bad": 2, "fix": "He says the opposite: there was rough simplicity then, and <b>now Rome is golden</b>."}, {"words": ["Ovid’s reading list", "includes Callimachus,", "Sappho and Propertius,", "and leaves out", "his own poems."], "bad": 4, "fix": "He <b>includes</b> his own works, and hopes his name will be set beside the others."}, {"words": ["The Doryphoros", "by Lysippos,", "of about 440 BC,", "was a bronze", "known from Roman marble copies."], "bad": 1, "fix": "It is by <b>Polykleitos</b>. Lysippos made the Apoxyomenos, about 330 BC."}, {"words": ["At Olympia", "the east pediment shows Pelops and Oinomaos,", "the west shows Lapiths and Centaurs,", "and the metopes show", "the labours of Theseus."], "bad": 4, "fix": "The metopes show the twelve labours of <b>Herakles</b>."}];
+/* ---------------- ENGINE ---------------- */
+const TABS = [{"id": "start", "label": "Start"}, {"id": "yod", "label": "1 Odyssey", "scored": true}, {"id": "ysa", "label": "2 Sappho", "scored": true}, {"id": "ypl", "label": "3 Plato", "scored": true}, {"id": "yov", "label": "4 Ovid", "scored": true}, {"id": "ysc", "label": "5 Greek sculpture", "scored": true}, {"id": "ysch", "label": "6 Scholars", "scored": true}, {"id": "trans", "label": "7 Written answers", "scored": true}, {"id": "spot", "label": "8 Spot the Error", "scored": true}, {"id": "board", "label": "Scoreboard"}];
+const MCKEYS = ["yod", "ysa", "ypl", "yov", "ysc", "ysch"];
+const ALLKEYS = MCKEYS.concat(['trans','spot']);
+const NAMES = {"yod": "1 Odyssey", "ysa": "2 Sappho", "ypl": "3 Plato", "yov": "4 Ovid", "ysc": "5 Greek sculpture", "ysch": "6 Scholars", "trans": "7 Written answers", "spot": "8 Spot the Error"};
+const SHORTNAMES = {"yod": "Odyssey", "ysa": "Sappho", "ypl": "Plato, Symposium", "yov": "Ovid, Ars Amatoria 3", "ysc": "Greek sculpture", "ysch": "Using the scholars", "trans": "Written answers", "spot": "Spot the Error"};
+
+/* ---------------- CLOUD (shared Vestigia store) ---------------- */
+const CLOUD = { endpoint:"https://vestigia-store.mrbeasley930.workers.dev", book:"y13rev27-hw1" };
+const LESSON = { id:"Y13R1", title:"Year 13 revision workbook" };
+let IDENTITY = null;
+function userKey(){ return IDENTITY ? (IDENTITY.cls+"::"+IDENTITY.cand) : "anon"; }
+function fullKey(){ return CLOUD.book+"::"+userKey(); }
+const CloudStore = {
+  async pull(){
+    if(!CLOUD.endpoint||!IDENTITY) return null;
+    try{ const r=await fetch(CLOUD.endpoint+"?key="+encodeURIComponent(fullKey()),{method:"GET"});
+      if(!r.ok) return null; const j=await r.json(); return j&&j.data?j.data:null;
+    }catch(e){ console.warn("cloud pull failed; this device only.",e); return null; }
+  },
+  async push(blob){
+    if(!CLOUD.endpoint||!IDENTITY) return false;
+    try{ const r=await fetch(CLOUD.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({key:fullKey(),cls:IDENTITY.cls,cand:IDENTITY.cand,book:CLOUD.book,
+                             data:blob,savedAt:new Date().toISOString()})});
+      return r.ok;
+    }catch(e){ console.warn("cloud push failed; kept on this device.",e); return false; }
+  }
+};
+
+let state = load();
+function storeKey(){ return "nostos_Y13R1_" + (IDENTITY ? (IDENTITY.cls+"_"+IDENTITY.cand) : "default"); }
+function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){ /* storage blocked on file:// — keep in memory */ } }
+function load(){ try { return JSON.parse(safeGet("nostos_Y13R1_default")||"{}"); } catch(e){ return {}; } }
+function save(){ safeSet(storeKey(), JSON.stringify(state)); mirrorToCloud(); }
+
+/* summary blob pushed to the class store — the teacher tracker reads this */
+function cloudSummary(){
+  let got=0,max=0; const sections={};
+  for(const k in MAXPTS){ const p=tabPoints(k); sections[k]={pts:p,max:MAXPTS[k]}; got+=p; max+=MAXPTS[k]; }
+  const detail=TRANS.map((t,i)=>({ id:'trans'+i, s:'trans', lat:t.lat,
+     a:(state.transText&&state.transText[i])||'', m:t.model,
+     mk:(state.trans&&state.trans[i]!=null)?state.trans[i]:null }));
+  return { name:(IDENTITY?IDENTITY.cand:''), lesson:LESSON.id, title:LESSON.title,
+    coreGot:got, coreTot:max, rag:(state.rag||''), notes:(state.notes||{}),
+    sections:sections, detail:detail, text:summaryText(),
+    savedAt:new Date().toISOString(), state:state };
+}
+function summaryText(){
+  let out="Year 13 revision workbook (Odyssey, Sappho, Plato, Ovid, Greek sculpture), 23 Nov - 4 Dec 2026"+"\n";
+  for(const k in MAXPTS){ out+="  "+SHORTNAMES[k]+": "+tabPoints(k)+"/"+MAXPTS[k]+"\n"; }
+  const nd=state.notes?Object.keys(state.notes).filter(k=>state.notes[k]):[];
+  out+="Notes copied: "+(nd.length?nd.map(k=>SHORTNAMES[k]||k).join(", "):"none yet")+"\n";
+  if(state.rag) out+="Confidence: "+state.rag+"\n";
+  (state.transText? Object.keys(state.transText):[]).forEach(i=>{
+    if(state.transText[i]) out+="  T"+(Number(i)+1)+": "+state.transText[i]+"\n"; });
+  return out;
+}
+let _mirrorTimer=null;
+function mirrorToCloud(){
+  if(!IDENTITY) return;
+  setSync("saving"); clearTimeout(_mirrorTimer);
+  _mirrorTimer=setTimeout(async()=>{ const ok=await CloudStore.push(cloudSummary()); setSync(ok?"cloud":"offline"); },600);
+}
+function setSync(s){
+  const el=document.getElementById('savestatus'); if(!el) return;
+  const map={ saving:["saving…","#8fb3c9"], cloud:["✓ saved to class store","#5cc98a"],
+    offline:["saved on this device — will sync when online","#d4af37"], device:["saved on this device","#5cc98a"] };
+  const m=map[s]||map.device; el.textContent=m[0]; el.style.color=m[1];
+}
+
+/* ---------------- gated notes ---------------- */
+function tickNotes(key,btn){
+  state.notes = state.notes || {};
+  if(state.notes[key]) return;
+  state.notes[key]=true; save();
+  applyNotes(key);
+}
+function applyNotes(key){
+  const qs=document.getElementById('qs_'+key); if(qs) qs.classList.remove('qs-locked');
+  const lk=document.getElementById('lock_'+key); if(lk) lk.style.display='none';
+  const b=document.getElementById('unlock_'+key);
+  if(b){ b.classList.add('doneit'); b.textContent='✓ Notes copied — questions unlocked'; }
+}
+function restoreNotes(){
+  if(!state.notes) return;
+  Object.keys(state.notes).forEach(k=>{ if(state.notes[k]) applyNotes(k); });
+}
+
+/* confidence RAG (feeds the tracker) */
+function setRag(v,btn){
+  state.rag=v;
+  document.querySelectorAll('#ragBox .sm').forEach(s=>s.classList.remove('chosen'));
+  if(btn) btn.classList.add('chosen');
+  save();
+}
+function restoreRag(){
+  if(!state.rag) return;
+  const el=document.querySelector('#ragBox .sm.'+({green:'nailed',amber:'close',red:'notyet'}[state.rag]));
+  if(el) el.classList.add('chosen');
+}
+
+/* replay saved answers after a cloud pull so returning pupils see their work */
+function restoreAll(){
+  MCKEYS.forEach(restoreMC);
+  restoreTrans(); restoreSpot(); restoreRag(); restoreNotes();
+  refreshScore(); renderTabs();
+  if(document.querySelector('#p-board').classList.contains('active')) renderBoard();
+}
+
+/* ---------------- sign-in gate ---------------- */
+function showGate(){
+  const ov=document.createElement('div'); ov.id='rp-gate';
+  ov.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(15,25,45,.94);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Georgia,serif;";
+  ov.innerHTML=
+    '<div style="max-width:430px;width:100%;background:#fff;border-top:8px solid #d4af37;border-radius:14px;padding:26px 26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.4);color:#1a2a3a;">'
+    +'<div style="font-size:13px;letter-spacing:1px;color:#2E75B6;font-weight:700;">YEAR 13 CLASSICAL CIVILISATION</div>'
+    +'<div style="font-size:22px;color:#1F3864;font-weight:800;margin:2px 0 4px;">Revision Workbook: 23 November to 4 December</div>'
+    +'<div style="font-size:13px;color:#556;margin-bottom:16px;">Choose your name so your work saves and follows you to any computer.</div>'
+    +'<label for="g-cand" style="font-size:13px;color:#1F3864;font-weight:700;">Your name</label>'
+    +'<select id="g-cand" style="width:100%;box-sizing:border-box;margin:5px 0 4px;padding:11px;border-radius:8px;border:1px solid #c5d0e0;font-size:15px;font-family:Georgia,serif;"><option value="">Choose your name</option><option>Isobel</option><option>Jared</option><option>Krisha</option><option>Tom</option></select>'
+    +'<div id="g-err" style="color:#c00;font-size:12.5px;min-height:17px;margin:3px 0 6px;"></div>'
+    +'<button id="g-go" style="width:100%;padding:12px;border:0;border-radius:8px;background:#1F3864;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:Georgia,serif;">Start my work</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  document.getElementById('g-go').addEventListener('click',signIn);
+  document.getElementById('g-cand').focus();
+}
+async function signIn(){
+  const cand=document.getElementById('g-cand').value;
+  const err=document.getElementById('g-err');
+  if(ROSTER.indexOf(cand)<0){ err.textContent="Choose your name from the list."; return; }
+  IDENTITY={cls:CLS,cand:cand};
+  const go=document.getElementById('g-go'); if(go) go.textContent="Loading…";
+  const remote=await CloudStore.pull();
+  if(remote&&remote.state){ state=remote.state; }
+  else { try{ state=JSON.parse(safeGet(storeKey())||"{}"); }catch(e){ state={}; } }
+  save();
+  const g=document.getElementById('rp-gate'); if(g) g.remove();
+  const who=document.getElementById('whoami'); if(who) who.innerHTML='Signed in: <b style="color:#d4af37">'+IDENTITY.cand+'</b>';
+  restoreAll();
+  setSync(remote?"cloud":"offline");
+}
+function signOut(){ IDENTITY=null; location.reload(); }
+
+/* tabs */
+function renderTabs(){
+  const totals = perTab();
+  document.getElementById('tabs').innerHTML = TABS.map(t=>{
+    let done = "";
+    if(t.scored && totals[t.id] && totals[t.id].done>=totals[t.id].total && totals[t.id].total>0) done=" <span class='done'>&#10003;</span>";
+    return `<button class="tab" data-tab="${t.id}" onclick="go('${t.id}')">${t.label}${done}</button>`;
+  }).join("");
+  const active = document.querySelector('.panel.active');
+  if(active){ const id=active.id.replace('p-',''); const b=document.querySelector(`.tab[data-tab="${id}"]`); if(b)b.classList.add('active'); }
+}
+function go(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  const b=document.querySelector(`.tab[data-tab="${id}"]`); if(b)b.classList.add('active');
+  if(id==='board') renderBoard();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* multiple-choice renderer */
+function renderMC(containerId, bank, key){
+  const c = document.getElementById(containerId);
+  c.innerHTML = bank.map((item,i)=>`
+    <div class="instance" id="${key}_${i}">
+      <div class="qcount">Question ${i+1} of ${bank.length}</div>
+      <div class="qtext">${item.q}</div>
+      <div class="opts">${item.opts.map((o,j)=>`<button class="opt" onclick="pickMC('${key}',${i},${j},${item.a})">${o}</button>`).join("")}</div>
+      <div class="fb" id="${key}_fb_${i}"></div>
+    </div>`).join("");
+}
+function pickMC(key,i,j,ans){
+  const box = document.getElementById(`${key}_${i}`);
+  if(box.dataset.answered) return;
+  state.pick = state.pick || {}; state.pick[`${key}_${i}`] = j;
+  applyMC(box,key,i,j,ans);
+  addPoint(key,i, j===ans?1:0);
+}
+function applyMC(box,key,i,j,ans){
+  box.dataset.answered="1";
+  const opts = box.querySelectorAll('.opt');
+  opts.forEach(o=>o.classList.add('locked'));
+  const bank = BANKS[key];
+  const fb = document.getElementById(`${key}_fb_${i}`);
+  if(j===ans){
+    opts[j].classList.add('correct');
+    fb.className="fb good show"; fb.innerHTML = "<b>Correct.</b> " + (bank[i].why||"");
+  } else {
+    opts[j].classList.add('wrong'); opts[ans].classList.add('correct');
+    fb.className="fb bad show"; fb.innerHTML = "<b>Not quite.</b> " + (bank[i].why||"");
+  }
+}
+function restoreMC(key){
+  if(!state.pick) return; const bank=BANKS[key];
+  bank.forEach((it,i)=>{ const p=state.pick[`${key}_${i}`];
+    if(p!==undefined){ const box=document.getElementById(`${key}_${i}`); if(box&&!box.dataset.answered) applyMC(box,key,i,p,it.a); } });
+}
+/* per-question point store */
+function addPoint(key,i,pts){
+  state[key] = state[key] || {};
+  state[key][i] = pts;
+  save(); refreshScore(); renderTabs();
+}
+
+/* Think & Write renderer */
+function renderTrans(){
+  const c = document.getElementById('transBody');
+  c.innerHTML = TRANS.map((t,i)=>`
+    <div class="instance">
+      <div class="qcount">${t.label||("Question "+(i+1)+" of "+TRANS.length)}</div>
+      <div class="qtext">${t.lat}</div>
+      <textarea class="wtext" id="trans_plan_${i}" placeholder="${t.plan||'Plan here'}" style="min-height:70px"></textarea>
+      <textarea class="wtext" id="trans_in_${i}" placeholder="${t.ph}" style="min-height:${t.h}px"></textarea>
+      <div class="btnrow"><button class="btn btn-ghost" onclick="revealTrans(${i})">Reveal model</button></div>
+      <div class="model-box" id="trans_m_${i}"><b>${t.mhead||"Model paragraphs (in outline):"}</b> ${t.model}<br><span class="note">${t.tip}</span></div>
+      <div class="selfmark" id="trans_sm_${i}" style="display:none">
+        <button class="sm nailed" onclick="markTrans(${i},2,this)">&#10003; Secure (2)</button>
+        <button class="sm close" onclick="markTrans(${i},1,this)">~ Developing (1)</button>
+        <button class="sm notyet" onclick="markTrans(${i},0,this)">&#10007; Not yet (0)</button>
+      </div>
+    </div>`).join("");
+}
+function revealTrans(i){
+  document.getElementById(`trans_m_${i}`).classList.add('show');
+  document.getElementById(`trans_sm_${i}`).style.display='flex';
+}
+function markTrans(i,pts,btn){
+  const row = btn.parentElement;
+  row.querySelectorAll('.sm').forEach(s=>s.classList.remove('chosen'));
+  btn.classList.add('chosen');
+  const ta=document.getElementById(`trans_in_${i}`);
+  state.transText = state.transText || {}; state.transText[i] = ta ? ta.value : "";
+  const tp=document.getElementById(`trans_plan_${i}`);
+  state.transPlan = state.transPlan || {}; state.transPlan[i] = tp ? tp.value : "";
+  addPoint('trans',i,pts);
+}
+function restoreTrans(){
+  TRANS.forEach((t,i)=>{
+    if(state.transText && state.transText[i]!==undefined){ const ta=document.getElementById(`trans_in_${i}`); if(ta) ta.value=state.transText[i]; }
+    if(state.transPlan && state.transPlan[i]!==undefined){ const tp=document.getElementById(`trans_plan_${i}`); if(tp) tp.value=state.transPlan[i]; }
+    if(state.trans && state.trans[i]!==undefined){
+      revealTrans(i);
+      const pts=state.trans[i]; const map={2:'nailed',1:'close',0:'notyet'};
+      const row=document.getElementById(`trans_sm_${i}`);
+      if(row){ const el=row.querySelector('.sm.'+map[pts]); if(el) el.classList.add('chosen'); }
+    }
+  });
+}
+
+/* spot the mistake renderer */
+function renderSpot(){
+  const c = document.getElementById('spotBody');
+  c.innerHTML = SPOT.map((s,i)=>`
+    <div class="instance" id="spot_${i}">
+      <div class="qcount">Summary ${i+1} of ${SPOT.length}</div>
+      <div class="qtext">${s.words.map((w,j)=>`<span class="opt" style="display:inline-block;margin:3px;padding:6px 12px" onclick="pickSpot(${i},${j})">${w}</span>`).join(" ")}</div>
+      <div class="fb" id="spot_fb_${i}"></div>
+    </div>`).join("");
+}
+function pickSpot(i,j){
+  const box = document.getElementById(`spot_${i}`);
+  if(box.dataset.answered) return;
+  state.pickspot = state.pickspot || {}; state.pickspot[i]=j;
+  applySpot(box,i,j);
+  addPoint('spot',i, j===SPOT[i].bad?1:0);
+}
+function applySpot(box,i,j){
+  box.dataset.answered="1";
+  const s = SPOT[i];
+  const spans = box.querySelectorAll('.opt');
+  spans.forEach(sp=>sp.style.cursor='default');
+  const fb = document.getElementById(`spot_fb_${i}`);
+  spans[s.bad].classList.add('correct');
+  if(j===s.bad){ fb.className="fb good show"; fb.innerHTML="<b>Found it.</b> "+s.fix; }
+  else { spans[j].classList.add('wrong'); fb.className="fb bad show"; fb.innerHTML="<b>The error was the highlighted part.</b> "+s.fix; }
+}
+function restoreSpot(){
+  if(!state.pickspot) return;
+  SPOT.forEach((s,i)=>{ const p=state.pickspot[i];
+    if(p!==undefined){ const box=document.getElementById(`spot_${i}`); if(box&&!box.dataset.answered) applySpot(box,i,p); } });
+}
+
+/* scoring */
+const BANKS = {yod:BK_yod, ysa:BK_ysa, ypl:BK_ypl, yov:BK_yov, ysc:BK_ysc, ysch:BK_ysch};
+const MAXPTS = {yod:BK_yod.length, ysa:BK_ysa.length, ypl:BK_ypl.length, yov:BK_yov.length, ysc:BK_ysc.length, ysch:BK_ysch.length, trans:TRANS.length*2, spot:SPOT.length};
+function tabPoints(key){
+  const s = state[key]||{}; let p=0; for(const k in s) p+=s[k]; return p;
+}
+function perTab(){
+  const out={};
+  ALLKEYS.forEach(k=>{
+    const s=state[k]||{}; const done=Object.keys(s).length;
+    let total = (k==='trans')?TRANS.length:(k==='spot')?SPOT.length:BANKS[k].length;
+    out[k]={done, total};
+  });
+  return out;
+}
+function refreshScore(){
+  let now=0, max=0;
+  for(const k in MAXPTS){ now+=tabPoints(k); max+=MAXPTS[k]; }
+  document.getElementById('scoreNow').textContent=now;
+  document.getElementById('scoreMax').textContent=max;
+}
+function renderBoard(){
+  let now=0, max=0; const rows=[];
+  for(const k of ALLKEYS){
+    const p=tabPoints(k), m=MAXPTS[k]; now+=p; max+=m;
+    rows.push(`<tr><td class="n">${NAMES[k]}</td><td>${p} / ${m}</td></tr>`);
+  }
+  document.getElementById('boardNow').textContent=now;
+  document.getElementById('boardMax').textContent=max;
+  document.getElementById('boardTable').innerHTML = `<tr><th>Section</th><th>Your score</th></tr>`+rows.join("");
+  const pct = max? Math.round(now/max*100):0;
+  const tn = IDENTITY ? IDENTITY.cand : "You";
+  let msg;
+  if(pct>=90) msg=`${tn}: ${pct}% &mdash; secure across the five topics.`;
+  else if(pct>=70) msg=`${tn}: ${pct}% &mdash; sound. Reread the notes for your lowest tab.`;
+  else if(pct>=40) msg=`${tn}: ${pct}% &mdash; some gaps. Reread the notes for the two lowest tabs and redo the tables from memory.`;
+  else msg=`${tn}: ${pct}% &mdash; keep going; finish the remaining tabs.`;
+  document.getElementById('boardMsg').innerHTML=msg;
+}
+function renderAllMC(){ MCKEYS.forEach(k=>renderMC(k+'Body',BANKS[k],k)); }
+function resetAll(){
+  if(!confirm("Clear your score and start again? (Your copied-notes ticks stay.)")) return;
+  const keepNotes = state.notes||{};
+  state={notes:keepNotes}; save();
+  renderAllMC(); renderTrans(); renderSpot(); refreshScore(); renderTabs(); renderBoard(); restoreNotes();
+}
+
+/* save typed writing as they go (debounced) so a draft is never lost */
+let _draftTimer=null;
+document.addEventListener('input',function(e){
+  const id=e.target&&e.target.id||''; const m=id.match(/^trans_(in|plan)_(\d+)$/); if(!m) return;
+  const key=m[1]==='in'?'transText':'transPlan'; state[key]=state[key]||{}; state[key][m[2]]=e.target.value;
+  clearTimeout(_draftTimer); _draftTimer=setTimeout(save,1200);
+});
+
+/* init — build the page, then require sign-in */
+renderAllMC();
+renderTrans();
+renderSpot();
+renderTabs();
+refreshScore();
+showGate();
+</script>
+<script id="vs-safety-notice">
+/* Online-safety notice (6 Nov 2026). Pupils are told that the page is monitored by Smoothwall.
+   Shows a notice in the sign-in box (before the Sign in button) and a slim strip at the foot
+   of the screen. To change the wording, edit LONG and SHORT below and re-run patch_safety_notice.py:
+   it replaces this block in every listed page. */
+(function(){
+  if (window.__vsSafety) return; window.__vsSafety = true;
+  var LONG = "This page is monitored by the school's online safety system (Smoothwall). Anything you type, including in games and answer boxes, can be flagged and passed to the pastoral team. A comment made as a joke, such as 'I want to die', will be treated as serious. If something is genuinely worrying you, please talk to your form tutor, Head of Year or any member of staff.";
+  var SHORT = "Monitored by Smoothwall: anything you type can be flagged to the pastoral team. Worried about something? Talk to your tutor, Head of Year or any member of staff.";
+
+  function gateNotice(){
+    if (document.getElementById("vs-safety-gate")) return;
+    var go = document.getElementById("g-go"), cand = document.getElementById("g-cand");
+    if (!go && !cand) return;
+    var box = document.createElement("div");
+    box.id = "vs-safety-gate"; box.setAttribute("role", "note");
+    box.style.cssText = "margin:12px 0;padding:10px 12px;border:2px solid #b3261e;border-radius:10px;background:#fff4f2;color:#1a1a1a;font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.45;text-align:left;max-width:100%;box-sizing:border-box";
+    box.innerHTML = '<div style="font-weight:700;margin-bottom:4px">Before you start</div>';
+    var p = document.createElement("div"); p.textContent = LONG; box.appendChild(p);
+    if (go && go.parentNode) go.parentNode.insertBefore(box, go);
+    else cand.parentNode.appendChild(box);
+  }
+
+  function strip(){
+    if (document.getElementById("vs-safety-strip") || !document.body) return;
+    var framed = false; try { framed = window.self !== window.top; } catch(e){ framed = true; }
+    if (framed) return;   // a game shown inside an arcade page: the outer page carries the strip
+    var s = document.createElement("div");
+    s.id = "vs-safety-strip"; s.setAttribute("role", "note"); s.textContent = SHORT;
+    s.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:40;background:#1a1a1a;color:#fff;font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:12.5px;line-height:1.35;padding:5px 12px;text-align:center;border-top:2px solid #b3261e";
+    document.body.appendChild(s);
+    var css = document.createElement("style");
+    css.textContent = "body{padding-bottom:calc(var(--vs-safety-h,34px) + 4px) !important}@media print{#vs-safety-strip,#vs-safety-gate{display:none !important}}";
+    document.head.appendChild(css);
+    var lift = 0;
+    function findBar(){   // a page toolbar fixed to the bottom of the screen: sit the strip just above it
+      lift = 0;
+      var all = document.body.querySelectorAll("*");
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i]; if (el === s || s.contains(el)) continue;
+        var cs = getComputedStyle(el); if (cs.position !== "fixed" || cs.display === "none" || cs.visibility === "hidden") continue;
+        var r = el.getBoundingClientRect();
+        if (r.height > 0 && r.height < innerHeight * 0.4 && r.width > innerWidth * 0.5 && r.bottom >= innerHeight - 2 && r.top < innerHeight - 2) lift = Math.max(lift, Math.round(innerHeight - r.top));
+      }
+    }
+    var fit = function(){ s.style.bottom = lift + "px"; document.documentElement.style.setProperty("--vs-safety-h", (s.offsetHeight + lift) + "px"); };
+    findBar(); fit();
+    window.addEventListener("resize", function(){ findBar(); fit(); });
+    window.addEventListener("load", function(){ findBar(); fit(); });
+  }
+
+  function run(){ gateNotice(); strip(); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+  new MutationObserver(gateNotice).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+</body>
+</html>
